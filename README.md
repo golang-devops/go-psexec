@@ -29,7 +29,7 @@ server.exe -service install
 If running under windows, the password needs to be set for the service.
 
 
-Client:
+### Client
 
 ```
 cd "%GOPATH%\src\github.com\golang-devops\go-psexec\client"
