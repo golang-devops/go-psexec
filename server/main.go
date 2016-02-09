@@ -13,5 +13,5 @@ func main() {
 	flag.Parse()
 
 	a := &app{}
-	service.NewServiceRunnerBuilder("GoPsExec", a).Run()
+	service.NewServiceRunnerBuilder("GoPsExec", a).WithServiceUserName_AsCurrentUser().Run()
 }
