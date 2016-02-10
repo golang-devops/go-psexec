@@ -7,9 +7,13 @@ import (
 	"github.com/mozillazg/request"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
+
+//This should be the same as on the server...
+const SigningKey = "somethingsupersecret"
 
 var (
 	serverFlag   = flag.String("server", "http://localhost:62677", "The endpoint server address")
@@ -29,7 +33,11 @@ func main() {
 
 	c := new(http.Client)
 
+	jwtToken := generateToken()
+	fmt.Println("Using JWT token: " + jwtToken)
+
 	req := request.NewRequest(c)
+	req.Headers["Authorization"] = "Bearer " + jwtToken
 
 	exeAndArgs := flag.Args()
 	if len(exeAndArgs) == 0 {
@@ -46,12 +54,14 @@ func main() {
 
 	req.Json = shared.Dto{*executorFlag, exe, args}
 
-	resp, err := req.Post(*serverFlag)
+	url := strings.Trim(*serverFlag, "/") + "/auth/exec"
+
+	resp, err := req.Post(url)
 	checkError(err)
 
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
-		fmt.Println("OUT: " + scanner.Text())
+		fmt.Println(scanner.Text())
 	}
 
 	defer resp.Body.Close()
