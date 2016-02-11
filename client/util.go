@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 func getErrorStringFromRecovery(r interface{}) string {
@@ -20,4 +21,8 @@ func checkError(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func combineServerUrl(relUrl string) string {
+	return strings.TrimRight(*serverFlag, "/") + "/" + strings.TrimLeft(relUrl, "/")
 }

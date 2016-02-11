@@ -1,45 +1,31 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
+	execstreamer "github.com/golang-devops/go-exec-streamer"
 	"github.com/labstack/echo"
+
+	"github.com/golang-devops/go-psexec/shared"
 )
 
 func (h *handler) handleExecFunc(c *echo.Context) error {
-	dto := h.deserializeBody(c.Request().Body)
+	dto := &shared.ExecDto{}
+	h.deserializeBody(c.Request().Body, dto)
 
-	e := NewExecutorFromName(dto.Executor)
 	h.logger.Infof("Starting command, exe = '%s', args = '%#v'", dto.Exe, dto.Args)
-	cmd := e.GetCommand(dto.Exe, dto.Args...)
 
-	stdout, err := cmd.StdoutPipe()
-	checkError(err)
+	streamer, err := execstreamer.NewExecStreamerBuilder().
+		ExecutorName(dto.Executor).
+		Exe(dto.Exe).
+		Args(dto.Args...).
+		Writers(c.Response()).
+		StdoutPrefix("OUT1:").
+		StderrPrefix("ERR1:").
+		AutoFlush().
+		Build()
 
-	stderr, err := cmd.StderrPipe()
-	checkError(err)
+	if err != nil {
+		panic(err)
+	}
 
-	stdoutScanner := bufio.NewScanner(stdout)
-	go func() {
-		for stdoutScanner.Scan() {
-			fmt.Fprintf(c.Response(), "O:%s\n", stdoutScanner.Text())
-			c.Response().Flush()
-		}
-	}()
-
-	stderrScanner := bufio.NewScanner(stderr)
-	go func() {
-		for stderrScanner.Scan() {
-			fmt.Fprintf(c.Response(), "E:%s\n", stderrScanner.Text())
-			c.Response().Flush()
-		}
-	}()
-
-	err = cmd.Start()
-	checkError(err)
-
-	err = cmd.Wait()
-	checkError(err)
-
-	return nil
+	return streamer.ExecAndWait()
 }

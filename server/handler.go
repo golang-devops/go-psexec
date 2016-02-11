@@ -1,23 +1,19 @@
 package main
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"github.com/ayufan/golang-kardianos-service"
 	"io"
-
-	"github.com/golang-devops/go-psexec/shared"
 )
 
 type handler struct {
 	logger service.Logger
+	key    *rsa.PrivateKey
 }
 
-func (h *handler) deserializeBody(body io.Reader) *shared.Dto {
+func (h *handler) deserializeBody(body io.Reader, dest interface{}) {
 	decoder := json.NewDecoder(body)
-
-	dto := &shared.Dto{}
-	err := decoder.Decode(dto)
+	err := decoder.Decode(dest)
 	checkError(err)
-
-	return dto
 }

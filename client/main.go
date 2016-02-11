@@ -7,13 +7,9 @@ import (
 	"github.com/mozillazg/request"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
-
-//This should be the same as on the server...
-const SigningKey = "somethingsupersecret"
 
 var (
 	serverFlag   = flag.String("server", "http://localhost:62677", "The endpoint server address")
@@ -31,13 +27,10 @@ func main() {
 
 	flag.Parse()
 
-	c := new(http.Client)
+	token, err := getToken()
+	checkError(err)
 
-	jwtToken := generateToken()
-	fmt.Println("Using JWT token: " + jwtToken)
-
-	req := request.NewRequest(c)
-	req.Headers["Authorization"] = "Bearer " + jwtToken
+	fmt.Println("Using token: " + token)
 
 	exeAndArgs := flag.Args()
 	if len(exeAndArgs) == 0 {
@@ -52,17 +45,19 @@ func main() {
 		args = exeAndArgs[1:]
 	}
 
-	req.Json = shared.Dto{*executorFlag, exe, args}
+	c := new(http.Client)
+	req := request.NewRequest(c)
+	req.Headers["Authorization"] = "Bearer " + token
+	req.Json = shared.ExecDto{*executorFlag, exe, args}
 
-	url := strings.Trim(*serverFlag, "/") + "/auth/exec"
+	url := combineServerUrl("/auth/exec")
 
 	resp, err := req.Post(url)
 	checkError(err)
 
+	defer resp.Body.Close()
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
 	}
-
-	defer resp.Body.Close()
 }
