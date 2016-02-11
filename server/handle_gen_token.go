@@ -27,26 +27,42 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		serverPubPKIXBytes, err := x509.MarshalPKIXPublicKey(&h.key.PublicKey)
+		sessionId, sessionToken, err := newSessionToken(clientPubKey)
 		if err != nil {
 			return err
 		}
 
-		sessionToken := newSessionToken()
-		dto := &shared.GenTokenResponseDto{serverPubPKIXBytes, sessionToken}
-
-		jsonBytes, err := json.Marshal(dto)
+		encryptedSessionToken, encryptedTokenSignature, err := shared.EncryptWithPublicKey(clientPubKey, h.key, sessionToken)
 		if err != nil {
 			return err
 		}
 
-		encryptedJson, err := shared.EncryptWithPublicKey(clientPubKey, jsonBytes)
+		serverPubKeyBytes, err := h.getPublicKeyBytes()
 		if err != nil {
 			return err
 		}
 
-		c.Response().WriteHeader(http.StatusOK)
-		c.Response().Write(encryptedJson)
+		jsonMessage, err := json.Marshal(&shared.GenTokenResponseMessage{
+			sessionId,
+			encryptedTokenSignature,
+			serverPubKeyBytes,
+		})
+		if err != nil {
+			return err
+		}
+
+		encryptedJsonMessage, err := shared.EncryptSymmetric(sessionToken, jsonMessage)
+		if err != nil {
+			return err
+		}
+
+		return c.JSON(
+			200,
+			&shared.GenTokenResponseDto{
+				encryptedSessionToken,
+				encryptedJsonMessage,
+			},
+		)
 	}
 
 	return nil

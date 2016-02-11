@@ -11,6 +11,12 @@ type GetTokenRequestDto struct {
 }
 
 type GenTokenResponseDto struct {
-	ServerPubPKIXBytes []byte
-	SessionToken       string
+	EncryptedSessionToken []byte //Encrypted with client public-key
+	EncryptedMessage      []byte //Encrypted with the session-token, the unencrypted object is of type `GenTokenResponseMessage`
+}
+
+type GenTokenResponseMessage struct {
+	SessionId                int
+	TokenEncryptionSignature []byte
+	ServerPubKeyBytes        []byte
 }

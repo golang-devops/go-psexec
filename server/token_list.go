@@ -1,36 +1,43 @@
 package main
 
 import (
-	"errors"
-	"fmt"
+	"crypto/rand"
+	"crypto/rsa"
 	"sync"
 )
 
 var (
-	newTokenLock *sync.RWMutex
-	tmpCounter   int
+	newTokenLock   *sync.RWMutex
+	currentTokenId int
 )
 
-var tmpTokens map[string]string = map[string]string{
-	"my-tok": "pub-key",
+type sessionToken struct {
+	Token           []byte
+	ClientPublicKey *rsa.PublicKey
 }
 
-func getClientPubkeyFromToken(token string) (string, error) {
-	if pubKey, ok := tmpTokens[token]; ok {
-		return pubKey, nil
-	}
-	return "", errors.New("Invalid token")
-}
+var tmpTokens map[int]*sessionToken = map[int]*sessionToken{}
 
-func newSessionToken() string {
-	//TODO: Implement better token
+func newSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
 	newTokenLock.Lock()
 	defer newTokenLock.Unlock()
-	tmpCounter++
-	return fmt.Sprintf("%d", tmpCounter)
+
+	key := make([]byte, 32)
+
+	_, err := rand.Read(key)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	currentTokenId++
+
+	tmpTokens[currentTokenId] = &sessionToken{key, clientPublicKey}
+
+	// The key length can be 32, 24, 16  bytes (OR in bits: 128, 192 or 256)
+	return currentTokenId, key, nil
 }
 
 func init() {
 	newTokenLock = &sync.RWMutex{}
-	tmpCounter = 1
+	currentTokenId = 1
 }

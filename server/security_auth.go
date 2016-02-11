@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/labstack/echo"
 	"net/http"
 )
@@ -15,13 +16,15 @@ func GetClientPubkey() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		token := auth[prefixLength+1:]
+		return errors.New("TEMP GET PUBLIC KEY ERROR!!!")
+		/*token := auth[prefixLength+1:]
+
 		clientPubKey, err := getClientPubkeyFromToken(token)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
 		c.Set("session-token", clientPubKey)
-		return nil
+		return nil*/
 	}
 }
