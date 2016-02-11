@@ -9,8 +9,8 @@ import (
 )
 
 type handler struct {
-	logger service.Logger
-	key    *rsa.PrivateKey
+	logger     service.Logger
+	privateKey *rsa.PrivateKey
 }
 
 func (h *handler) deserializeBody(body io.Reader, dest interface{}) {
@@ -20,5 +20,5 @@ func (h *handler) deserializeBody(body io.Reader, dest interface{}) {
 }
 
 func (h *handler) getPublicKeyBytes() ([]byte, error) {
-	return x509.MarshalPKIXPublicKey(&h.key.PublicKey)
+	return x509.MarshalPKIXPublicKey(&h.privateKey.PublicKey)
 }

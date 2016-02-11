@@ -27,10 +27,10 @@ func main() {
 
 	flag.Parse()
 
-	token, err := getToken()
+	session, err := createNewSession()
 	checkError(err)
 
-	fmt.Println("Using token: " + token)
+	fmt.Printf("Using session id: %s\n", session.SessionId)
 
 	exeAndArgs := flag.Args()
 	if len(exeAndArgs) == 0 {
@@ -47,7 +47,7 @@ func main() {
 
 	c := new(http.Client)
 	req := request.NewRequest(c)
-	req.Headers["Authorization"] = "Bearer " + token
+	//req.Headers["Authorization"] = "Bearer " + token
 	req.Json = shared.ExecDto{*executorFlag, exe, args}
 
 	url := combineServerUrl("/auth/exec")

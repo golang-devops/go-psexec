@@ -12,16 +12,16 @@ import (
 type app struct {
 	logger          service.Logger
 	gracefulTimeout time.Duration
-	key             *rsa.PrivateKey
+	privateKey      *rsa.PrivateKey
 	srv             *graceful.Server
 }
 
 func (a *app) Run(logger service.Logger) {
 	a.logger = logger
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
-	a.key = readPemKey()
+	a.privateKey = readPemKey()
 
-	h := &handler{logger, a.key}
+	h := &handler{logger, a.privateKey}
 
 	e := echo.New()
 	e.Use(middleware.Logger())

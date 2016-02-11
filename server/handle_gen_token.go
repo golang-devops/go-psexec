@@ -32,7 +32,7 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 			return err
 		}
 
-		encryptedSessionToken, encryptedTokenSignature, err := shared.EncryptWithPublicKey(clientPubKey, h.key, sessionToken)
+		encryptedSessionToken, encryptedTokenSignature, err := shared.EncryptWithPublicKey(clientPubKey, h.privateKey, sessionToken)
 		if err != nil {
 			return err
 		}

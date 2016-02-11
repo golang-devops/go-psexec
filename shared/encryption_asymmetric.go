@@ -43,19 +43,14 @@ func EncryptWithPublicKey(recipientPubKey *rsa.PublicKey, senderPrivKey *rsa.Pri
 	return encrypted, signature, nil
 }
 
-func verifySenderMessage(senderPublicKey *rsa.PublicKey, cipher, signature []byte) error {
+func VerifySenderMessage(senderPublicKey *rsa.PublicKey, cipher, signature []byte) error {
 	return rsa.VerifyPSS(senderPublicKey, newhash, cipher, signature, opts)
 }
 
-func DecryptWithPrivateKey(recipientPvtKey *rsa.PrivateKey, senderPublicKey *rsa.PublicKey, cipher, signature []byte) ([]byte, error) {
+func DecryptWithPrivateKey(recipientPvtKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
 	sha_hash := sha256.New()
+
 	decrypted, err := rsa.DecryptOAEP(sha_hash, rand.Reader, recipientPvtKey, cipher, label)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = verifySenderMessage(senderPublicKey, cipher, signature)
 	if err != nil {
 		return nil, err
 	}
