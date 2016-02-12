@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/mozillazg/request"
 	"log"
-	"net/http"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -27,15 +25,15 @@ func main() {
 
 	flag.Parse()
 
-	session, err := createNewSession()
-	checkError(err)
-
-	fmt.Printf("Using session id: %s\n", session.SessionId)
-
 	exeAndArgs := flag.Args()
 	if len(exeAndArgs) == 0 {
 		panic("Need at least one additional argument")
 	}
+
+	session, err := createNewSession()
+	checkError(err)
+
+	fmt.Printf("Using session id: %d\n", session.SessionId)
 
 	var exe string
 	var args []string = []string{}
@@ -45,17 +43,18 @@ func main() {
 		args = exeAndArgs[1:]
 	}
 
-	c := new(http.Client)
-	req := request.NewRequest(c)
-	//req.Headers["Authorization"] = "Bearer " + token
-	req.Json = shared.ExecDto{*executorFlag, exe, args}
+	encryptedJson, err := session.EncryptAsJson(&shared.ExecDto{*executorFlag, exe, args})
+	checkError(err)
+
+	req := session.NewRequest()
+	req.Json = shared.EncryptedJsonContainer{encryptedJson}
 
 	url := combineServerUrl("/auth/exec")
 
 	resp, err := req.Post(url)
 	checkError(err)
-
 	defer resp.Body.Close()
+
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())

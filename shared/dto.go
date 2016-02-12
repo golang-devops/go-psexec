@@ -1,5 +1,9 @@
 package shared
 
+type EncryptedJsonContainer struct {
+	EncryptedJson []byte
+}
+
 type ExecDto struct {
 	Executor string
 	Exe      string

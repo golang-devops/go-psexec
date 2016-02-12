@@ -4,7 +4,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/mozillazg/request"
 	"io/ioutil"
@@ -12,12 +11,6 @@ import (
 
 	"github.com/golang-devops/go-psexec/shared"
 )
-
-type sessionDetails struct {
-	SessionId    int
-	SessionToken []byte
-	ServerPubKey *rsa.PublicKey
-}
 
 type sessionCreator struct {
 	pvtKey       *rsa.PrivateKey
@@ -41,6 +34,10 @@ func (s *sessionCreator) requestToken() error {
 	resp, err := req.Post(url)
 	checkError(err)
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Code: %d - %s", resp.StatusCode, resp.Status)
+	}
 
 	responseBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -91,7 +88,7 @@ func (s *sessionCreator) parseServerPublicKeyFromMessage() error {
 
 	serverPubKey, ok := pubKeyInterface.(*rsa.PublicKey)
 	if !ok {
-		return errors.New("The server public-key received is in an incorrect format")
+		return fmt.Errorf("The server public-key received is in an incorrect format")
 	}
 
 	s.serverPubKey = serverPubKey
@@ -99,7 +96,7 @@ func (s *sessionCreator) parseServerPublicKeyFromMessage() error {
 }
 
 func (s *sessionCreator) verifyServerEncryptedSessionToken() error {
-	return shared.VerifySenderMessage(s.serverPubKey, s.dto.EncryptedSessionToken, s.msg.TokenEncryptionSignature)
+	return shared.VerifySenderMessage(s.serverPubKey, s.sessionToken, s.msg.TokenEncryptionSignature)
 }
 
 func (s *sessionCreator) createSessionDetails() *sessionDetails {

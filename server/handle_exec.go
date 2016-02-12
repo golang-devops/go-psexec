@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	execstreamer "github.com/golang-devops/go-exec-streamer"
 	"github.com/labstack/echo"
 
@@ -8,8 +9,24 @@ import (
 )
 
 func (h *handler) handleExecFunc(c *echo.Context) error {
+	sessionToken, err := h.getAuthenticatedSessionToken(c)
+	if err != nil {
+		return err
+	}
+
+	encryptedJsonContainer := &shared.EncryptedJsonContainer{}
+	h.deserializeBody(c.Request().Body, encryptedJsonContainer)
+
+	descryptedJson, err := sessionToken.DecryptWithServerPrivateKey(h.privateKey, encryptedJsonContainer.EncryptedJson)
+	if err != nil {
+		return err
+	}
+
 	dto := &shared.ExecDto{}
-	h.deserializeBody(c.Request().Body, dto)
+	err = json.Unmarshal(descryptedJson, dto)
+	if err != nil {
+		return err
+	}
 
 	h.logger.Infof("Starting command, exe = '%s', args = '%#v'", dto.Exe, dto.Args)
 
@@ -18,8 +35,8 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		Exe(dto.Exe).
 		Args(dto.Args...).
 		Writers(c.Response()).
-		StdoutPrefix("OUT1:").
-		StderrPrefix("ERR1:").
+		// StdoutPrefix("OUT1:").
+		StderrPrefix("ERROR:").
 		AutoFlush().
 		Build()
 

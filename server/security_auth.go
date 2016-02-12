@@ -1,10 +1,26 @@
 package main
 
 import (
-	"errors"
 	"github.com/labstack/echo"
 	"net/http"
+	"strconv"
+	"strings"
 )
+
+func getSessionIdFromBearerToken(token string) (int, error) {
+	prefix := "sid-"
+	if !strings.HasPrefix(token, prefix) {
+		return 0, echo.NewHTTPError(http.StatusUnauthorized)
+	}
+
+	sidString := token[len(prefix):]
+	i, err := strconv.ParseInt(sidString, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(i), nil
+}
 
 func GetClientPubkey() echo.HandlerFunc {
 	return func(c *echo.Context) error {
@@ -16,15 +32,13 @@ func GetClientPubkey() echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		return errors.New("TEMP GET PUBLIC KEY ERROR!!!")
-		/*token := auth[prefixLength+1:]
-
-		clientPubKey, err := getClientPubkeyFromToken(token)
+		token := auth[prefixLength+1:]
+		sessionId, err := getSessionIdFromBearerToken(token)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		c.Set("session-token", clientPubKey)
-		return nil*/
+		c.Set("session-id", sessionId)
+		return nil
 	}
 }

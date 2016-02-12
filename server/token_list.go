@@ -4,11 +4,14 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"sync"
+
+	"github.com/golang-devops/go-psexec/shared"
 )
 
 var (
 	newTokenLock   *sync.RWMutex
 	currentTokenId int
+	tmpTokens      map[int]*sessionToken = map[int]*sessionToken{}
 )
 
 type sessionToken struct {
@@ -16,7 +19,9 @@ type sessionToken struct {
 	ClientPublicKey *rsa.PublicKey
 }
 
-var tmpTokens map[int]*sessionToken = map[int]*sessionToken{}
+func (s *sessionToken) DecryptWithServerPrivateKey(serverPrivateKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
+	return shared.DecryptWithPrivateKey(serverPrivateKey, cipher)
+}
 
 func newSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
 	newTokenLock.Lock()

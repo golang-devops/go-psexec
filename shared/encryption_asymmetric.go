@@ -14,9 +14,9 @@ var (
 	opts    = &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto} // TODO: Is this `PSSSaltLengthAuto` fine?
 )
 
-func getMessageSignature(senderPrivKey *rsa.PrivateKey, message []byte) ([]byte, error) {
+func GenerateMessageSignature(senderPrivKey *rsa.PrivateKey, plainText []byte) ([]byte, error) {
 	pssh := newhash.New()
-	_, err := pssh.Write(message)
+	_, err := pssh.Write(plainText)
 	if err != nil {
 		return nil, err
 	}
@@ -26,25 +26,28 @@ func getMessageSignature(senderPrivKey *rsa.PrivateKey, message []byte) ([]byte,
 	return signature, err
 }
 
-func EncryptWithPublicKey(recipientPubKey *rsa.PublicKey, senderPrivKey *rsa.PrivateKey, message []byte) (cipher, signature []byte, failure error) {
+func EncryptWithPublicKey(recipientPubKey *rsa.PublicKey, plainText []byte) (cipher []byte, failure error) {
 	sha_hash := sha256.New()
 
-	encrypted, err := rsa.EncryptOAEP(sha_hash, rand.Reader, recipientPubKey, message, label)
+	encrypted, err := rsa.EncryptOAEP(sha_hash, rand.Reader, recipientPubKey, plainText, label)
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	signature, err = getMessageSignature(senderPrivKey, message)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return encrypted, signature, nil
+	return encrypted, nil
 }
 
-func VerifySenderMessage(senderPublicKey *rsa.PublicKey, cipher, signature []byte) error {
-	return rsa.VerifyPSS(senderPublicKey, newhash, cipher, signature, opts)
+func VerifySenderMessage(senderPublicKey *rsa.PublicKey, plainText, signature []byte) error {
+	pssh := newhash.New()
+	_, err := pssh.Write(plainText)
+	if err != nil {
+		return err
+	}
+
+	hashed := pssh.Sum(nil)
+
+	return rsa.VerifyPSS(senderPublicKey, newhash, hashed, signature, opts)
 }
 
 func DecryptWithPrivateKey(recipientPvtKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
