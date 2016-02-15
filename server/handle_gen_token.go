@@ -23,7 +23,7 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 	if clientPubKey, ok := pubKeyInterface.(*rsa.PublicKey); !ok {
 		return errors.New("The public key received is in an incorrect format")
 	} else {
-		if !checkPubKeyAllowed(clientPubKey) {
+		if !h.checkPubKeyAllowed(clientPubKey) {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 

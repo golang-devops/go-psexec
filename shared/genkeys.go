@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
+	"fmt"
 	"os"
 )
 
@@ -26,4 +28,14 @@ func GenerateKeyPairPemFile(outputPemFilePath string) {
 		Bytes: x509.MarshalPKCS1PrivateKey(pvtKey),
 	})
 	checkError(err)
+}
+
+func GeneratePublicKeyFromPemFlag(inputPemFile string) {
+	privKey := ReadPemKey(inputPemFile)
+
+	pubPKIXBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
+	checkError(err)
+
+	hexString := hex.EncodeToString(pubPKIXBytes)
+	fmt.Println(hexString)
 }

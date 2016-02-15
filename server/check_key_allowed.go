@@ -4,7 +4,11 @@ import (
 	"crypto/rsa"
 )
 
-func checkPubKeyAllowed(pubKey *rsa.PublicKey) bool {
-	//TODO: Implement
-	return true
+func (h *handler) checkPubKeyAllowed(pubKey *rsa.PublicKey) bool {
+	for _, allowedPubKey := range h.AllowedPublicKeys {
+		if allowedPubKey.PublicKeyEquals(pubKey) {
+			return true
+		}
+	}
+	return false
 }

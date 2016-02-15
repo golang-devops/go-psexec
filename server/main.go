@@ -9,15 +9,26 @@ import (
 )
 
 var (
-	genpem  = flag.String("genpem", "", "The full path where to generate the pem file containing the private (and public) key")
-	address = flag.String("address", ":62677", "The full host and port to listen on")
+	//These flags is not run as service but will exit after completion
+	genpemFlag        = flag.String("genpem", "", "The full path where to generate the pem file containing the private (and public) key")
+	genpubFromPemFlag = flag.String("pub_from_pem", "", "Generate the public key from the input pem file")
+)
+
+var (
+	addressFlag               = flag.String("address", ":62677", "The full host and port to listen on")
+	allowedPublicKeysFileFlag = flag.String("allowed_public_keys_file", "", "The path to the allowed public keys file")
 )
 
 func main() {
 	flag.Parse()
 
-	if len(*genpem) > 0 {
-		shared.GenerateKeyPairPemFile(*genpem)
+	if len(*genpemFlag) > 0 {
+		shared.GenerateKeyPairPemFile(*genpemFlag)
+		return
+	}
+
+	if len(*genpubFromPemFlag) > 0 {
+		shared.GeneratePublicKeyFromPemFlag(*genpubFromPemFlag)
 		return
 	}
 
@@ -37,7 +48,7 @@ func main() {
 
 	additionalArgs := []string{
 		"-address",
-		*address,
+		*addressFlag,
 	}
 
 	service.

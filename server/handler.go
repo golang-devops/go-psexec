@@ -8,11 +8,14 @@ import (
 	"github.com/ayufan/golang-kardianos-service"
 	"github.com/labstack/echo"
 	"io"
+
+	"github.com/golang-devops/go-psexec/shared"
 )
 
 type handler struct {
-	logger     service.Logger
-	privateKey *rsa.PrivateKey
+	logger            service.Logger
+	privateKey        *rsa.PrivateKey
+	AllowedPublicKeys []*shared.AllowedPublicKey
 }
 
 func (h *handler) deserializeBody(body io.Reader, dest interface{}) {

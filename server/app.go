@@ -7,6 +7,8 @@ import (
 	"github.com/labstack/echo/middleware"
 	"gopkg.in/tylerb/graceful.v1"
 	"time"
+
+	"github.com/golang-devops/go-psexec/shared"
 )
 
 type app struct {
@@ -14,6 +16,8 @@ type app struct {
 	gracefulTimeout time.Duration
 	privateKey      *rsa.PrivateKey
 	srv             *graceful.Server
+
+	AllowedPublicKeys []*shared.AllowedPublicKey
 }
 
 func (a *app) Run(logger service.Logger) {
@@ -21,7 +25,19 @@ func (a *app) Run(logger service.Logger) {
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
 	a.privateKey = readPemKey()
 
-	h := &handler{logger, a.privateKey}
+	if len(*allowedPublicKeysFileFlag) > 0 {
+		a.AllowedPublicKeys = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
+		if len(a.AllowedPublicKeys) == 0 {
+			logger.Errorf("Allowed public key file '%s' was read but contains no keys", *allowedPublicKeysFileFlag)
+		}
+		for _, allowedKey := range a.AllowedPublicKeys {
+			logger.Infof("Allowing key name '%s'", allowedKey.Name)
+		}
+	} else {
+		logger.Errorf("No allowed public keys file specified, no keys will be allowed")
+	}
+
+	h := &handler{logger, a.privateKey, a.AllowedPublicKeys}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -39,11 +55,11 @@ func (a *app) Run(logger service.Logger) {
 	r.Use(GetClientPubkey())
 	r.Post("/exec", h.handleExecFunc)
 
-	a.logger.Infof("Now serving on '%s'", *address)
+	a.logger.Infof("Now serving on '%s'", *addressFlag)
 
 	a.srv = &graceful.Server{
 		Timeout: a.gracefulTimeout,
-		Server:  e.Server(*address),
+		Server:  e.Server(*addressFlag),
 	}
 
 	a.srv.ListenAndServe()
