@@ -38,11 +38,17 @@ func main() {
 		return
 	}
 
+	if len(*allowedPublicKeysFileFlag) == 0 {
+		log.Fatalln("No allowed public keys file specified, no keys will be allowed. Exiting server.")
+	}
+
 	a := &app{}
 
 	additionalArgs := []string{
 		"-address",
 		*addressFlag,
+		"-allowed_public_keys_file",
+		*allowedPublicKeysFileFlag,
 	}
 
 	service.

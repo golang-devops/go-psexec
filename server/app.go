@@ -32,22 +32,17 @@ func (a *app) Run(logger service.Logger) {
 
 	a.privateKey = pvtKey
 
-	if len(*allowedPublicKeysFileFlag) > 0 {
-		a.AllowedPublicKeys, err = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
-		if err != nil {
-			logger.Errorf("Cannot read allowed public keys, error: %s. Exiting server.", err.Error())
-			return
-		}
-		if len(a.AllowedPublicKeys) == 0 {
-			logger.Errorf("Allowed public key file '%s' was read but contains no keys. Exiting server.", *allowedPublicKeysFileFlag)
-			return
-		}
-		for _, allowedKey := range a.AllowedPublicKeys {
-			logger.Infof("Allowing key name '%s'", allowedKey.Name)
-		}
-	} else {
-		logger.Errorf("No allowed public keys file specified, no keys will be allowed. Exiting server.")
+	a.AllowedPublicKeys, err = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
+	if err != nil {
+		logger.Errorf("Cannot read allowed public keys, error: %s. Exiting server.", err.Error())
 		return
+	}
+	if len(a.AllowedPublicKeys) == 0 {
+		logger.Errorf("Allowed public key file '%s' was read but contains no keys. Exiting server.", *allowedPublicKeysFileFlag)
+		return
+	}
+	for _, allowedKey := range a.AllowedPublicKeys {
+		logger.Infof("Allowing key name '%s'", allowedKey.Name)
 	}
 
 	h := &handler{logger, a.privateKey, a.AllowedPublicKeys}
