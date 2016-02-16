@@ -8,6 +8,8 @@ import (
 	"github.com/ayufan/golang-kardianos-service"
 	"github.com/labstack/echo"
 	"io"
+	"net"
+	"net/http"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -40,4 +42,12 @@ func (h *handler) getAuthenticatedSessionToken(c *echo.Context) (*sessionToken, 
 	}
 
 	return token, nil
+}
+
+func (h *handler) getIPFromRequest(r *http.Request) string {
+	if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
+		return ipProxy
+	}
+	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	return ip
 }
