@@ -15,7 +15,7 @@ go get -u github.com/golang-devops/go-psexec
 ```
 cd "%GOPATH%\src\github.com\golang-devops\go-psexec\server"
 go build -o=server.exe
-server.exe
+server.exe -allowed_public_keys_file "%UserProfile%/.config/go-psexec/server_allowed_public_keys" -server_pem "%UserProfile%/.config/go-psexec/server.pem"
 ```
 
 #### Install server as service
@@ -23,7 +23,7 @@ server.exe
 ```
 cd "%GOPATH%\src\github.com\golang-devops\go-psexec\server"
 go build -o=server.exe
-server.exe -service install
+server.exe -service install -allowed_public_keys_file "%UserProfile%/.config/go-psexec/server_allowed_public_keys" -server_pem "%UserProfile%/.config/go-psexec/server.pem"
 ```
 
 If running under windows, the password needs to be set for the service.

@@ -17,6 +17,7 @@ var (
 var (
 	addressFlag               = flag.String("address", ":62677", "The full host and port to listen on")
 	allowedPublicKeysFileFlag = flag.String("allowed_public_keys_file", "", "The path to the allowed public keys file")
+	serverPemFlag             = flag.String("server_pem", "", "The file path for the server pem (private+public) key file")
 )
 
 func main() {
@@ -38,8 +39,13 @@ func main() {
 		return
 	}
 
+	if len(*serverPemFlag) == 0 {
+		flag.Usage()
+		log.Fatalln("The server pem flag is required.")
+	}
 	if len(*allowedPublicKeysFileFlag) == 0 {
-		log.Fatalln("No allowed public keys file specified, no keys will be allowed. Exiting server.")
+		flag.Usage()
+		log.Fatalln("No allowed public keys file specified, no keys will be allowed.")
 	}
 
 	a := &app{}
@@ -49,6 +55,8 @@ func main() {
 		*addressFlag,
 		"-allowed_public_keys_file",
 		*allowedPublicKeysFileFlag,
+		"-server_pem",
+		*serverPemFlag,
 	}
 
 	service.
