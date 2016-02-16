@@ -24,7 +24,7 @@ func (a *app) Run(logger service.Logger) {
 	a.logger = logger
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
 
-	pvtKey, err := readPemKey()
+	pvtKey, err := shared.ReadPemKey(*serverPemFlag)
 	if err != nil {
 		logger.Errorf("Cannot read server pem file, error: %s. Exiting server.", err.Error())
 		return

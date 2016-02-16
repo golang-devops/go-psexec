@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	serverFlag   = flag.String("server", "http://localhost:62677", "The endpoint server address")
-	executorFlag = flag.String("executor", "winshell", "The executor to use")
+	serverFlag    = flag.String("server", "http://localhost:62677", "The endpoint server address")
+	executorFlag  = flag.String("executor", "winshell", "The executor to use")
+	clientPemFlag = flag.String("client_pem", "client.pem", "The file path for the client pem (private+public) key file")
 )
 
 func handleRecovery() {

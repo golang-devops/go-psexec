@@ -110,7 +110,7 @@ func (s *sessionCreator) createSessionDetails() *sessionDetails {
 }
 
 func createNewSession() (*sessionDetails, error) {
-	pvtKey, err := readPemKey()
+	pvtKey, err := shared.ReadPemKey(*clientPemFlag)
 	if err != nil {
 		return nil, err
 	}
