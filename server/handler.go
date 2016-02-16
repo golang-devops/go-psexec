@@ -18,10 +18,9 @@ type handler struct {
 	AllowedPublicKeys []*shared.AllowedPublicKey
 }
 
-func (h *handler) deserializeBody(body io.Reader, dest interface{}) {
+func (h *handler) deserializeBody(body io.Reader, dest interface{}) error {
 	decoder := json.NewDecoder(body)
-	err := decoder.Decode(dest)
-	checkError(err)
+	return decoder.Decode(dest)
 }
 
 func (h *handler) getPublicKeyBytes() ([]byte, error) {

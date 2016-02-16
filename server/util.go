@@ -15,9 +15,3 @@ func getErrorStringFromRecovery(r interface{}) string {
 	}
 	return errStr
 }
-
-func checkError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}

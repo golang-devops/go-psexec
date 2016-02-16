@@ -11,12 +11,16 @@ type AllowedPublicKey struct {
 	PublicKey *rsa.PublicKey
 }
 
-func (a *AllowedPublicKey) PublicKeyEquals(otherPubKey *rsa.PublicKey) bool {
+func (a *AllowedPublicKey) PublicKeyEquals(otherPubKey *rsa.PublicKey) (bool, error) {
 	thisBytes, err := x509.MarshalPKIXPublicKey(a.PublicKey)
-	checkError(err)
+	if err != nil {
+		return false, err
+	}
 
 	otherBytes, err := x509.MarshalPKIXPublicKey(otherPubKey)
-	checkError(err)
+	if err != nil {
+		return false, err
+	}
 
-	return bytes.Equal(thisBytes, otherBytes)
+	return bytes.Equal(thisBytes, otherBytes), nil
 }

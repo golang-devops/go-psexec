@@ -15,7 +15,10 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 	}
 
 	encryptedJsonContainer := &shared.EncryptedJsonContainer{}
-	h.deserializeBody(c.Request().Body, encryptedJsonContainer)
+	err = h.deserializeBody(c.Request().Body, encryptedJsonContainer)
+	if err != nil {
+		return err
+	}
 
 	descryptedJson, err := sessionToken.DecryptWithServerPrivateKey(h.privateKey, encryptedJsonContainer.EncryptedJson)
 	if err != nil {

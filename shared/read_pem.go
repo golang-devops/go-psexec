@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 )
 
-func ReadPemKey(filePath string) *rsa.PrivateKey {
+func ReadPemKey(filePath string) (*rsa.PrivateKey, error) {
 	pem_data, err := ioutil.ReadFile(filePath)
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	block, _ := pem.Decode(pem_data)
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
@@ -17,12 +19,16 @@ func ReadPemKey(filePath string) *rsa.PrivateKey {
 	}
 
 	pvtKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	pvtKey.Precompute()
 
 	err = pvtKey.Validate()
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
-	return pvtKey
+	return pvtKey, nil
 }

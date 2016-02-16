@@ -17,12 +17,6 @@ func getErrorStringFromRecovery(r interface{}) string {
 	return errStr
 }
 
-func checkError(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func combineServerUrl(relUrl string) string {
 	return strings.TrimRight(*serverFlag, "/") + "/" + strings.TrimLeft(relUrl, "/")
 }

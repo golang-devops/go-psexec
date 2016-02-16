@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/zero-boilerplate/go-api-helpers/service"
+	"log"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -23,12 +24,18 @@ func main() {
 	flag.Parse()
 
 	if len(*genpemFlag) > 0 {
-		shared.GenerateKeyPairPemFile(*genpemFlag)
+		err := shared.GenerateKeyPairPemFile(*genpemFlag)
+		if err != nil {
+			log.Fatalf("Unable to generate key pair pem file, error: %s", err.Error())
+		}
 		return
 	}
 
 	if len(*genpubFromPemFlag) > 0 {
-		shared.GeneratePublicKeyFromPemFlag(*genpubFromPemFlag)
+		err := shared.GeneratePublicKeyFromPemFlag(*genpubFromPemFlag)
+		if err != nil {
+			log.Fatalf("Unable to generate public key from pem file, error: %s", err.Error())
+		}
 		return
 	}
 

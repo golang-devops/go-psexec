@@ -31,7 +31,9 @@ func main() {
 	}
 
 	session, err := createNewSession()
-	checkError(err)
+	if err != nil {
+		log.Fatalf("Unable to create new session, error: %s", err.Error())
+	}
 
 	fmt.Printf("Using session id: %d\n", session.SessionId)
 
@@ -44,7 +46,9 @@ func main() {
 	}
 
 	encryptedJson, err := session.EncryptAsJson(&shared.ExecDto{*executorFlag, exe, args})
-	checkError(err)
+	if err != nil {
+		log.Fatalf("Unable to encrypt DTO as JSON, error: %s", err.Error())
+	}
 
 	req := session.NewRequest()
 	req.Json = shared.EncryptedJsonContainer{encryptedJson}
@@ -52,7 +56,10 @@ func main() {
 	url := combineServerUrl("/auth/exec")
 
 	resp, err := req.Post(url)
-	checkError(err)
+	if err != nil {
+		log.Fatalf("Unable make POST request to url '%s', error: %s", url, err.Error())
+	}
+
 	defer resp.Body.Close()
 
 	scanner := bufio.NewScanner(resp.Body)

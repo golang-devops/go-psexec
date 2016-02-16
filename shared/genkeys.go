@@ -10,32 +10,43 @@ import (
 	"os"
 )
 
-func GenerateKeyPairPemFile(outputPemFilePath string) {
+func GenerateKeyPairPemFile(outputPemFilePath string) error {
 	pvtKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	pvtKey.Precompute()
 
 	err = pvtKey.Validate()
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	pvtFile, err := os.OpenFile(outputPemFilePath, os.O_RDWR|os.O_TRUNC|os.O_CREATE, 0777)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 	defer pvtFile.Close()
 
-	err = pem.Encode(pvtFile, &pem.Block{
+	return pem.Encode(pvtFile, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(pvtKey),
 	})
-	checkError(err)
 }
 
-func GeneratePublicKeyFromPemFlag(inputPemFile string) {
-	privKey := ReadPemKey(inputPemFile)
+func GeneratePublicKeyFromPemFlag(inputPemFile string) error {
+	privKey, err := ReadPemKey(inputPemFile)
+	if err != nil {
+		return err
+	}
 
 	pubPKIXBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 
 	hexString := hex.EncodeToString(pubPKIXBytes)
 	fmt.Println(hexString)
+	return nil
 }

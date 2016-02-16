@@ -8,9 +8,11 @@ import (
 	"strings"
 )
 
-func LoadAllowedPublicKeysFile(file string) (allowedKeys []*AllowedPublicKey) {
+func LoadAllowedPublicKeysFile(file string) (allowedKeys []*AllowedPublicKey, returnErr error) {
 	fileBytes, err := ioutil.ReadFile(file)
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	lines := strings.Split(string(fileBytes), "\n")
 
@@ -26,10 +28,14 @@ func LoadAllowedPublicKeysFile(file string) (allowedKeys []*AllowedPublicKey) {
 		hexKey := strings.TrimSpace(split[1])
 
 		pubPKIXBytes, err := hex.DecodeString(hexKey)
-		checkError(err)
+		if err != nil {
+			return nil, err
+		}
 
 		pubKeyInterface, err := x509.ParsePKIXPublicKey(pubPKIXBytes)
-		checkError(err)
+		if err != nil {
+			return nil, err
+		}
 
 		rsaPublicKey, ok := pubKeyInterface.(*rsa.PublicKey)
 		if !ok {
@@ -43,5 +49,6 @@ func LoadAllowedPublicKeysFile(file string) (allowedKeys []*AllowedPublicKey) {
 			})
 	}
 
+	returnErr = nil
 	return
 }

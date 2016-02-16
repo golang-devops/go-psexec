@@ -32,7 +32,9 @@ func (s *sessionCreator) requestToken() error {
 
 	url := combineServerUrl("/token")
 	resp, err := req.Post(url)
-	checkError(err)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
@@ -108,11 +110,15 @@ func (s *sessionCreator) createSessionDetails() *sessionDetails {
 }
 
 func createNewSession() (*sessionDetails, error) {
+	pvtKey, err := readPemKey()
+	if err != nil {
+		return nil, err
+	}
 	creator := &sessionCreator{
-		pvtKey: readPemKey(),
+		pvtKey: pvtKey,
 	}
 
-	err := creator.requestToken()
+	err = creator.requestToken()
 	if err != nil {
 		return nil, err
 	}

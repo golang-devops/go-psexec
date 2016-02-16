@@ -8,9 +8,11 @@ import (
 	"github.com/golang-devops/go-psexec/shared"
 )
 
-func readPemKey() *rsa.PrivateKey {
+func readPemKey() (*rsa.PrivateKey, error) {
 	curExePath, err := filepath.Abs(os.Args[0])
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	pemPath := filepath.Join(filepath.Dir(curExePath), "client.pem")
 

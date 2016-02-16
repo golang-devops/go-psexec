@@ -23,18 +23,31 @@ type app struct {
 func (a *app) Run(logger service.Logger) {
 	a.logger = logger
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
-	a.privateKey = readPemKey()
+
+	pvtKey, err := readPemKey()
+	if err != nil {
+		logger.Errorf("Cannot read server pem file, error: %s. Exiting server.", err.Error())
+		return
+	}
+
+	a.privateKey = pvtKey
 
 	if len(*allowedPublicKeysFileFlag) > 0 {
-		a.AllowedPublicKeys = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
+		a.AllowedPublicKeys, err = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
+		if err != nil {
+			logger.Errorf("Cannot read allowed public keys, error: %s. Exiting server.", err.Error())
+			return
+		}
 		if len(a.AllowedPublicKeys) == 0 {
-			logger.Errorf("Allowed public key file '%s' was read but contains no keys", *allowedPublicKeysFileFlag)
+			logger.Errorf("Allowed public key file '%s' was read but contains no keys. Exiting server.", *allowedPublicKeysFileFlag)
+			return
 		}
 		for _, allowedKey := range a.AllowedPublicKeys {
 			logger.Infof("Allowing key name '%s'", allowedKey.Name)
 		}
 	} else {
-		logger.Errorf("No allowed public keys file specified, no keys will be allowed")
+		logger.Errorf("No allowed public keys file specified, no keys will be allowed. Exiting server.")
+		return
 	}
 
 	h := &handler{logger, a.privateKey, a.AllowedPublicKeys}
@@ -62,7 +75,10 @@ func (a *app) Run(logger service.Logger) {
 		Server:  e.Server(*addressFlag),
 	}
 
-	a.srv.ListenAndServe()
+	err = a.srv.ListenAndServe()
+	if err != nil {
+		logger.Errorf("Unable to ListenAndServe, error: %s", err.Error())
+	}
 }
 
 func (a *app) OnStop() {

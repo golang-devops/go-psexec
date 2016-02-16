@@ -13,7 +13,10 @@ import (
 
 func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 	dto := &shared.GetTokenRequestDto{}
-	h.deserializeBody(c.Request().Body, dto)
+	err := h.deserializeBody(c.Request().Body, dto)
+	if err != nil {
+		return err
+	}
 
 	pubKeyInterface, err := x509.ParsePKIXPublicKey(dto.ClientPubPKIXBytes)
 	if err != nil {
@@ -69,6 +72,4 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 			},
 		)
 	}
-
-	return nil
 }

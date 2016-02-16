@@ -7,18 +7,23 @@ import (
 	"testing"
 )
 
-func testsReadPemKey(keyName string) *rsa.PrivateKey {
+func testsReadPemKey(keyName string) (*rsa.PrivateKey, error) {
 	pemPath, err := filepath.Abs("./testdata/" + keyName)
-	checkError(err)
+	if err != nil {
+		return nil, err
+	}
 
 	return ReadPemKey(pemPath)
 }
 
 func TestEncryptWithPublicKey(t *testing.T) {
 	Convey("Testing encryption using public key", t, func() {
-		recipientPvtKey := testsReadPemKey("recipient.pem")
+		recipientPvtKey, err := testsReadPemKey("recipient.pem")
+		So(err, ShouldBeNil)
 		recipientPubKey := &recipientPvtKey.PublicKey
-		senderPvtKey := testsReadPemKey("sender.pem")
+		senderPvtKey, err := testsReadPemKey("sender.pem")
+		So(err, ShouldBeNil)
+
 		senderPublicKey := &senderPvtKey.PublicKey
 		message := []byte{122, 182, 172, 135, 64, 225, 230, 251, 55, 13, 230, 6, 164, 86, 124, 7, 180, 233, 94, 188, 172, 253, 142, 131, 166, 36, 43, 135, 70, 23, 128, 2}
 
