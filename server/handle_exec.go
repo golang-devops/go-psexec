@@ -20,13 +20,13 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		return err
 	}
 
-	descryptedJson, err := sessionToken.DecryptWithServerPrivateKey(h.privateKey, encryptedJsonContainer.EncryptedJson)
+	decryptedJson, err := sessionToken.DecryptWithSessionToken(encryptedJsonContainer.EncryptedJson)
 	if err != nil {
 		return err
 	}
 
 	dto := &shared.ExecDto{}
-	err = json.Unmarshal(descryptedJson, dto)
+	err = json.Unmarshal(decryptedJson, dto)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		ExecutorName(dto.Executor).
 		Exe(dto.Exe).
 		Args(dto.Args...).
-		Writers(c.Response()).
+		Writers(c.Response()). //Writers(sessionToken.NewEncryptedWriter(c.Response())).
 		// StdoutPrefix("OUT1:").
 		StderrPrefix("ERROR:").
 		AutoFlush().

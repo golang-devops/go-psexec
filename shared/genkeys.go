@@ -10,15 +10,24 @@ import (
 	"os"
 )
 
-func GenerateKeyPairPemFile(outputPemFilePath string) error {
+func GeneratePrivateKey() (*rsa.PrivateKey, error) {
 	pvtKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	pvtKey.Precompute()
 
 	err = pvtKey.Validate()
+	if err != nil {
+		return nil, err
+	}
+
+	return pvtKey, nil
+}
+
+func GenerateKeyPairPemFile(outputPemFilePath string) error {
+	pvtKey, err := GeneratePrivateKey()
 	if err != nil {
 		return err
 	}
@@ -35,7 +44,7 @@ func GenerateKeyPairPemFile(outputPemFilePath string) error {
 	})
 }
 
-func GeneratePublicKeyFromPemFlag(inputPemFile string) error {
+func PrintPemFilePublicKeyAsHex(inputPemFile string) error {
 	privKey, err := ReadPemKey(inputPemFile)
 	if err != nil {
 		return err

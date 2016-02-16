@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/zero-boilerplate/go-api-helpers/service"
 	"log"
 
@@ -32,24 +31,12 @@ func main() {
 	}
 
 	if len(*genpubFromPemFlag) > 0 {
-		err := shared.GeneratePublicKeyFromPemFlag(*genpubFromPemFlag)
+		err := shared.PrintPemFilePublicKeyAsHex(*genpubFromPemFlag)
 		if err != nil {
 			log.Fatalf("Unable to generate public key from pem file, error: %s", err.Error())
 		}
 		return
 	}
-
-	fmt.Println("............................................................................................................................")
-	fmt.Println("............................................................................................................................")
-	fmt.Println("............................................................................................................................")
-	fmt.Println("TODO")
-	fmt.Println("- Have a list of allowed client public-keys and check that in `checkPubKeyAllowed`")
-	fmt.Println("- Encrypt the 'exec streamer feedback' with the session token.")
-	fmt.Println("- More unit tests")
-	fmt.Println("- Can perhaps make the token list (`tmpTokens`) a more persistent list using a DB or Redis.")
-	fmt.Println("............................................................................................................................")
-	fmt.Println("............................................................................................................................")
-	fmt.Println("............................................................................................................................")
 
 	a := &app{}
 

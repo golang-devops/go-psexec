@@ -29,5 +29,5 @@ func (s *sessionDetails) EncryptAsJson(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 
-	return shared.EncryptWithPublicKey(s.ServerPubKey, jsonBytes)
+	return shared.EncryptSymmetric(s.SessionToken, jsonBytes)
 }

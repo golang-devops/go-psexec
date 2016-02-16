@@ -65,5 +65,13 @@ func main() {
 	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
+
+		/*cipher := scanner.Bytes()
+		plaintextBytes, err := shared.DecryptSymmetric(session.SessionToken, cipher)
+		if err != nil {
+			log.Fatalf("Unable read encrypted server response, error: %s", err.Error())
+		}
+		fmt.Println(string(plaintextBytes))
+		*/
 	}
 }

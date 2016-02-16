@@ -19,9 +19,13 @@ type sessionToken struct {
 	ClientPublicKey *rsa.PublicKey
 }
 
-func (s *sessionToken) DecryptWithServerPrivateKey(serverPrivateKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
-	return shared.DecryptWithPrivateKey(serverPrivateKey, cipher)
+func (s *sessionToken) DecryptWithSessionToken(cipher []byte) ([]byte, error) {
+	return shared.DecryptSymmetric(s.Token, cipher)
 }
+
+/*func (s *sessionToken) NewEncryptedWriter(writer io.Writer) *shared.EncryptedWriterProxy {
+	return shared.NewEncryptedWriterProxy(writer, s.Token)
+}*/
 
 func newSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
 	newTokenLock.Lock()
