@@ -93,6 +93,6 @@ func (a *app) OnStop() {
 		a.watcherPublicKeys.Close()
 	}
 
-	a.srv.Stop(a.gracefulTimeout)
+	// a.srv.Stop(a.gracefulTimeout)
 	<-a.srv.StopChan()
 }
