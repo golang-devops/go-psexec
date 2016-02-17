@@ -5,6 +5,7 @@ import (
 	"github.com/ayufan/golang-kardianos-service"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"gopkg.in/fsnotify.v1"
 	"gopkg.in/tylerb/graceful.v1"
 	"strings"
 	"time"
@@ -18,7 +19,9 @@ type app struct {
 	privateKey      *rsa.PrivateKey
 	srv             *graceful.Server
 
-	AllowedPublicKeys []*shared.AllowedPublicKey
+	h *handler
+
+	watcherPublicKeys *fsnotify.Watcher
 }
 
 func (a *app) Run(logger service.Logger) {
@@ -33,20 +36,26 @@ func (a *app) Run(logger service.Logger) {
 
 	a.privateKey = pvtKey
 
-	a.AllowedPublicKeys, err = shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
+	a.h = &handler{logger, a.privateKey, nil}
+
+	allowedKeys, err := shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
 	if err != nil {
 		logger.Errorf("Cannot read allowed public keys, error: %s. Exiting server.", err.Error())
 		return
 	}
-	if len(a.AllowedPublicKeys) == 0 {
+	if len(allowedKeys) == 0 {
 		logger.Errorf("Allowed public key file '%s' was read but contains no keys. Exiting server.", *allowedPublicKeysFileFlag)
 		return
 	}
-	for _, allowedKey := range a.AllowedPublicKeys {
-		logger.Infof("Allowing key name '%s'", allowedKey.Name)
-	}
 
-	h := &handler{logger, a.privateKey, a.AllowedPublicKeys}
+	a.setAllowedPublicKeys(allowedKeys)
+
+	watcher, err := shared.StartWatcher(*allowedPublicKeysFileFlag, a)
+	if err != nil {
+
+	} else {
+		a.watcherPublicKeys = watcher
+	}
 
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -56,13 +65,13 @@ func (a *app) Run(logger service.Logger) {
 	e.SetRenderer(t)
 
 	// Unrestricted group
-	e.Post("/token", h.handleGenerateTokenFunc)
-	e.Get("/webui", h.handleWebUIFunc)
+	e.Post("/token", a.h.handleGenerateTokenFunc)
+	e.Get("/webui", a.h.handleWebUIFunc)
 
 	// Restricted group
 	r := e.Group("/auth")
 	r.Use(GetClientPubkey())
-	r.Post("/exec", h.handleExecFunc)
+	r.Post("/exec", a.h.handleExecFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 
@@ -80,6 +89,10 @@ func (a *app) Run(logger service.Logger) {
 }
 
 func (a *app) OnStop() {
+	if a.watcherPublicKeys != nil {
+		a.watcherPublicKeys.Close()
+	}
+
 	a.srv.Stop(a.gracefulTimeout)
 	<-a.srv.StopChan()
 }
