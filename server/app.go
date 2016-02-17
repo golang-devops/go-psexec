@@ -7,6 +7,8 @@ import (
 	"github.com/labstack/echo/middleware"
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/tylerb/graceful.v1"
+	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -24,6 +26,33 @@ type app struct {
 	watcherPublicKeys *fsnotify.Watcher
 }
 
+func (a *app) registerInterruptSignal() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c { //for sig := range c {
+			if a.srv != nil {
+				a.logger.Warning("Interrupt signal received, stopping gracefully")
+
+				c2 := make(chan bool, 1)
+				go func() {
+					a.srv.Stop(a.gracefulTimeout)
+					c2 <- true
+				}()
+
+				select {
+				case <-c2:
+					a.logger.Warning("Graceful shutdown complete")
+					os.Exit(0)
+				case <-time.After(a.gracefulTimeout):
+					a.logger.Warning("Normal timeout, forcefully exiting")
+					os.Exit(1)
+				}
+			}
+		}
+	}()
+}
+
 func (a *app) Run(logger service.Logger) {
 	a.logger = logger
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
@@ -33,7 +62,6 @@ func (a *app) Run(logger service.Logger) {
 		logger.Errorf("Cannot read server pem file, error: %s. Exiting server.", err.Error())
 		return
 	}
-
 	a.privateKey = pvtKey
 
 	a.h = &handler{logger, a.privateKey, nil}
@@ -80,6 +108,8 @@ func (a *app) Run(logger service.Logger) {
 		Server:  e.Server(*addressFlag),
 	}
 
+	a.registerInterruptSignal()
+
 	a.srv.ListenAndServe()
 	if err != nil {
 		if !strings.Contains(err.Error(), "closed network connection") {
@@ -93,6 +123,6 @@ func (a *app) OnStop() {
 		a.watcherPublicKeys.Close()
 	}
 
-	// a.srv.Stop(a.gracefulTimeout)
+	a.srv.Stop(a.gracefulTimeout)
 	<-a.srv.StopChan()
 }
