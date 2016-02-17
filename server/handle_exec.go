@@ -46,7 +46,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		Build()
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return streamer.ExecAndWait()

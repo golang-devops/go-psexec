@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/hex"
+	"errors"
 	"io/ioutil"
 	"strings"
 )
@@ -39,7 +40,7 @@ func LoadAllowedPublicKeysFile(file string) (allowedKeys []*AllowedPublicKey, re
 
 		rsaPublicKey, ok := pubKeyInterface.(*rsa.PublicKey)
 		if !ok {
-			panic("The server public-key received is in an incorrect format")
+			return nil, errors.New("The server public-key received is in an incorrect format")
 		}
 
 		allowedKeys = append(allowedKeys,
