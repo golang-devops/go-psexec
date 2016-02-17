@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"gopkg.in/tylerb/graceful.v1"
+	"strings"
 	"time"
 
 	"github.com/golang-devops/go-psexec/shared"
@@ -70,9 +71,11 @@ func (a *app) Run(logger service.Logger) {
 		Server:  e.Server(*addressFlag),
 	}
 
-	err = a.srv.ListenAndServe()
+	a.srv.ListenAndServe()
 	if err != nil {
-		logger.Errorf("Unable to ListenAndServe, error: %s", err.Error())
+		if !strings.Contains(err.Error(), "closed network connection") {
+			logger.Errorf("Unable to ListenAndServe, error: %s", err.Error())
+		}
 	}
 }
 

@@ -8,6 +8,10 @@ import (
 	"github.com/golang-devops/go-psexec/shared"
 )
 
+const (
+	CURRENT_USER_VAL = "use_current"
+)
+
 var (
 	//These flags is not run as service but will exit after completion
 	genpemFlag        = flag.String("genpem", "", "The full path where to generate the pem file containing the private (and public) key")
@@ -15,6 +19,8 @@ var (
 )
 
 var (
+	serviceUsernameFlag       = flag.String("service_username", "", "The username of the installed service (use '"+CURRENT_USER_VAL+"' without quotes to use the current user running the install service command.")
+	servicePasswordFlag       = flag.String("service_password", "", "The password of the installed service")
 	addressFlag               = flag.String("address", ":62677", "The full host and port to listen on")
 	allowedPublicKeysFileFlag = flag.String("allowed_public_keys_file", "", "The path to the allowed public keys file")
 	serverPemFlag             = flag.String("server_pem", "", "The file path for the server pem (private+public) key file")
@@ -39,30 +45,43 @@ func main() {
 		return
 	}
 
-	if len(*serverPemFlag) == 0 {
-		flag.Usage()
-		log.Fatalln("The server pem flag is required.")
-	}
-	if len(*allowedPublicKeysFileFlag) == 0 {
-		flag.Usage()
-		log.Fatalln("No allowed public keys file specified, no keys will be allowed.")
+	var additionalArgs []string = []string{}
+
+	if len(*service.ServiceFlag) == 0 || *service.ServiceFlag != "uninstall" {
+		if len(*serverPemFlag) == 0 {
+			flag.Usage()
+			log.Fatalln("The server pem flag is required.")
+		}
+		if len(*allowedPublicKeysFileFlag) == 0 {
+			flag.Usage()
+			log.Fatalln("No allowed public keys file specified, no keys will be allowed.")
+		}
+
+		additionalArgs = []string{
+			"-address",
+			*addressFlag,
+			"-server_pem",
+			*serverPemFlag,
+			"-allowed_public_keys_file",
+			*allowedPublicKeysFileFlag,
+		}
 	}
 
 	a := &app{}
 
-	additionalArgs := []string{
-		"-address",
-		*addressFlag,
-		"-allowed_public_keys_file",
-		*allowedPublicKeysFileFlag,
-		"-server_pem",
-		*serverPemFlag,
+	builder := service.NewServiceRunnerBuilder("GoPsExec", a).WithOnStopHandler(a).WithAdditionalArguments(additionalArgs...)
+
+	if len(*serviceUsernameFlag) > 0 {
+		if *serviceUsernameFlag == CURRENT_USER_VAL {
+			builder = builder.WithServiceUserName_AsCurrentUser()
+		} else {
+			builder = builder.WithServiceUserName(*serviceUsernameFlag)
+		}
 	}
 
-	service.
-		NewServiceRunnerBuilder("GoPsExec", a).
-		WithOnStopHandler(a).
-		WithAdditionalArguments(additionalArgs...).
-		WithServiceUserName_AsCurrentUser().
-		Run()
+	if len(*servicePasswordFlag) > 0 {
+		builder = builder.WithServicePassword(*servicePasswordFlag)
+	}
+
+	builder.Run()
 }
