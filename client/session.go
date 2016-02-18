@@ -37,7 +37,7 @@ func (s *Session) NewRequest() *request.Request {
 	return req
 }
 
-func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*request.Response, error) {
+func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*RequestResponse, error) {
 	url := s.GetFullServerUrl(relUrl)
 
 	encryptedJson, err := s.EncryptAsJson(rawJsonData)
@@ -48,10 +48,15 @@ func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface
 	req := s.NewRequest()
 	req.Json = shared.EncryptedJsonContainer{encryptedJson}
 
-	return req.Post(url)
+	resp, err := req.Post(url)
+	if err != nil {
+		return nil, err
+	}
+
+	return &RequestResponse{resp}, nil
 }
 
-func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*request.Response, error) {
+func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*RequestResponse, error) {
 	relUrl := "/auth/exec"
 
 	resp, err := s.StartEncryptedJsonRequest(relUrl, execDto)
@@ -62,11 +67,11 @@ func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*request.Response, 
 	return resp, nil
 }
 
-func (s *Session) StartExecWinshellRequest(exe string, args ...string) (*request.Response, error) {
+func (s *Session) StartExecWinshellRequest(exe string, args ...string) (*RequestResponse, error) {
 	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, Args: args})
 }
 
-func (s *Session) StartExecBashRequest(exe string, args ...string) (*request.Response, error) {
+func (s *Session) StartExecBashRequest(exe string, args ...string) (*RequestResponse, error) {
 	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, Args: args})
 }
 
