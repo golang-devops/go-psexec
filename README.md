@@ -31,10 +31,63 @@ If running under windows, the password needs to be set for the service.
 
 ### Client
 
+#### Run the command-line interface (CLI)
+
 ```
-cd "%GOPATH%\src\github.com\golang-devops\go-psexec\client"
-go build -o=client.exe
-client.exe -server "http://localhost:62677" -executor winshell ping 127.0.0.1 -n 6
+cd "%GOPATH%\src\github.com\golang-devops\go-psexec\client\cmd"
+go build -o=gopsexec-client.exe
+gopsexec-client.exe -server "http://localhost:62677" -executor winshell ping 127.0.0.1 -n 6
+```
+
+#### Run from source
+
+First check/replace variables in the `//Variables` section, **especially** the `clientPemFile`.
+
+Create a `main.go` file with the content below and run `go run main.go`
+
+```
+package main
+
+import (
+    "log"
+    "bufio"
+    "fmt"
+
+    "github.com/golang-devops/go-psexec/client"
+    "github.com/golang-devops/go-psexec/shared"
+)
+
+func main() {
+    //Variables
+    clientPemFile := "/path/to/client.pem"
+    serverUrl := "http://localhost:62677"
+    executor := "winshell"
+    exe := "ping"
+    args := []string{"google.com", "-n", "6"}
+
+    pvtKey, err := shared.ReadPemKey(clientPemFile)
+    if err != nil {
+        log.Fatalf("Cannot read client pem file, error: %s", err.Error())
+    }
+
+    c := client.New(pvtKey)
+
+    session, err := c.RequestNewSession(serverUrl)
+    if err != nil {
+        log.Fatalf("Unable to create new session, error: %s", err.Error())
+    }
+
+    resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, args})
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer resp.Body.Close()
+
+    scanner := bufio.NewScanner(resp.Body)
+    for scanner.Scan() {
+        fmt.Println(scanner.Text())
+    }
+}
 ```
 
 ## TODO

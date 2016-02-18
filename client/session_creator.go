@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"crypto/rsa"
@@ -13,14 +13,15 @@ import (
 )
 
 type sessionCreator struct {
-	pvtKey       *rsa.PrivateKey
-	dto          *shared.GenTokenResponseDto
-	sessionToken []byte
-	msg          *shared.GenTokenResponseMessage
-	serverPubKey *rsa.PublicKey
+	pvtKey        *rsa.PrivateKey
+	baseServerUrl string
+	dto           *shared.GenTokenResponseDto
+	sessionToken  []byte
+	msg           *shared.GenTokenResponseMessage
+	serverPubKey  *rsa.PublicKey
 }
 
-func (s *sessionCreator) requestToken() error {
+func (s *sessionCreator) RequestToken() error {
 	pubPKIXBytes, err := x509.MarshalPKIXPublicKey(&s.pvtKey.PublicKey)
 	if err != nil {
 		return err
@@ -30,7 +31,7 @@ func (s *sessionCreator) requestToken() error {
 	req := request.NewRequest(c)
 	req.Json = &shared.GetTokenRequestDto{pubPKIXBytes}
 
-	url := combineServerUrl("/token")
+	url := combineServerUrl(s.baseServerUrl, "/token")
 	resp, err := req.Post(url)
 	if err != nil {
 		return err
@@ -56,7 +57,7 @@ func (s *sessionCreator) requestToken() error {
 	return nil
 }
 
-func (s *sessionCreator) decryptSessionTokenWithPrivateKey() error {
+func (s *sessionCreator) DecryptSessionTokenWithPrivateKey() error {
 	sessionToken, err := shared.DecryptWithPrivateKey(s.pvtKey, s.dto.EncryptedSessionToken)
 	if err != nil {
 		return err
@@ -66,7 +67,7 @@ func (s *sessionCreator) decryptSessionTokenWithPrivateKey() error {
 	return nil
 }
 
-func (s *sessionCreator) decryptMessageWithSessionToken() error {
+func (s *sessionCreator) DecryptMessageWithSessionToken() error {
 	jsonMessage, err := shared.DecryptSymmetric(s.sessionToken, s.dto.EncryptedMessage)
 	if err != nil {
 		return err
@@ -82,7 +83,7 @@ func (s *sessionCreator) decryptMessageWithSessionToken() error {
 	return nil
 }
 
-func (s *sessionCreator) parseServerPublicKeyFromMessage() error {
+func (s *sessionCreator) ParseServerPublicKeyFromMessage() error {
 	pubKeyInterface, err := x509.ParsePKIXPublicKey(s.msg.ServerPubKeyBytes)
 	if err != nil {
 		return err
@@ -97,51 +98,15 @@ func (s *sessionCreator) parseServerPublicKeyFromMessage() error {
 	return nil
 }
 
-func (s *sessionCreator) verifyServerEncryptedSessionToken() error {
+func (s *sessionCreator) VerifyServerEncryptedSessionToken() error {
 	return shared.VerifySenderMessage(s.serverPubKey, s.sessionToken, s.msg.TokenEncryptionSignature)
 }
 
-func (s *sessionCreator) createSessionDetails() *sessionDetails {
-	return &sessionDetails{
+func (s *sessionCreator) Create() *Session {
+	return &Session{
+		s.baseServerUrl,
 		s.msg.SessionId,
 		s.sessionToken,
 		s.serverPubKey,
 	}
-}
-
-func createNewSession() (*sessionDetails, error) {
-	pvtKey, err := shared.ReadPemKey(*clientPemFlag)
-	if err != nil {
-		return nil, err
-	}
-	creator := &sessionCreator{
-		pvtKey: pvtKey,
-	}
-
-	err = creator.requestToken()
-	if err != nil {
-		return nil, err
-	}
-
-	err = creator.decryptSessionTokenWithPrivateKey()
-	if err != nil {
-		return nil, err
-	}
-
-	err = creator.decryptMessageWithSessionToken()
-	if err != nil {
-		return nil, err
-	}
-
-	err = creator.parseServerPublicKeyFromMessage()
-	if err != nil {
-		return nil, err
-	}
-
-	err = creator.verifyServerEncryptedSessionToken()
-	if err != nil {
-		return nil, err
-	}
-
-	return creator.createSessionDetails(), nil
 }

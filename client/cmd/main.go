@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
 )
 
@@ -28,15 +29,8 @@ func main() {
 
 	exeAndArgs := flag.Args()
 	if len(exeAndArgs) == 0 {
-		panic("Need at least one additional argument")
+		log.Fatal("Need at least one additional argument")
 	}
-
-	session, err := createNewSession()
-	if err != nil {
-		log.Fatalf("Unable to create new session, error: %s", err.Error())
-	}
-
-	fmt.Printf("Using session id: %d\n", session.SessionId)
 
 	var exe string
 	var args []string = []string{}
@@ -46,21 +40,24 @@ func main() {
 		args = exeAndArgs[1:]
 	}
 
-	encryptedJson, err := session.EncryptAsJson(&shared.ExecDto{*executorFlag, exe, args})
+	pvtKey, err := shared.ReadPemKey(*clientPemFlag)
 	if err != nil {
-		log.Fatalf("Unable to encrypt DTO as JSON, error: %s", err.Error())
+		log.Fatalf("Cannot read client pem file, error: %s", err.Error())
 	}
 
-	req := session.NewRequest()
-	req.Json = shared.EncryptedJsonContainer{encryptedJson}
+	c := client.New(pvtKey)
 
-	url := combineServerUrl("/auth/exec")
-
-	resp, err := req.Post(url)
+	session, err := c.RequestNewSession(*serverFlag)
 	if err != nil {
-		log.Fatalf("Unable make POST request to url '%s', error: %s", url, err.Error())
+		log.Fatalf("Unable to create new session, error: %s", err.Error())
 	}
 
+	fmt.Printf("Using session id: %d\n", session.SessionId())
+
+	resp, err := session.StartExecRequest(&shared.ExecDto{*executorFlag, exe, args})
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer resp.Body.Close()
 
 	scanner := bufio.NewScanner(resp.Body)
@@ -68,11 +65,11 @@ func main() {
 		fmt.Println(scanner.Text())
 
 		/*cipher := scanner.Bytes()
-		plaintextBytes, err := shared.DecryptSymmetric(session.SessionToken, cipher)
-		if err != nil {
-			log.Fatalf("Unable read encrypted server response, error: %s", err.Error())
-		}
-		fmt.Println(string(plaintextBytes))
+		  plaintextBytes, err := shared.DecryptSymmetric(session.SessionToken(), cipher)
+		  if err != nil {
+		      log.Fatalf("Unable read encrypted server response, error: %s", err.Error())
+		  }
+		  fmt.Println(string(plaintextBytes))
 		*/
 	}
 }

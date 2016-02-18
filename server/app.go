@@ -86,6 +86,8 @@ func (a *app) Run(logger service.Logger) {
 	}
 
 	e := echo.New()
+	e.Debug()
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
