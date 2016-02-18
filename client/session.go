@@ -62,6 +62,14 @@ func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*request.Response, 
 	return resp, nil
 }
 
+func (s *Session) StartExecWinshellRequest(exe string, args ...string) (*request.Response, error) {
+	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, Args: args})
+}
+
+func (s *Session) StartExecBashRequest(exe string, args ...string) (*request.Response, error) {
+	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, Args: args})
+}
+
 func (s *Session) EncryptAsJson(v interface{}) ([]byte, error) {
 	jsonBytes, err := json.Marshal(v)
 	if err != nil {
