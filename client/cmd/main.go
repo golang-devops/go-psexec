@@ -5,15 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
 )
 
 var (
-	serverFlag    = flag.String("server", "http://localhost:62677", "The endpoint server address")
-	executorFlag  = flag.String("executor", "winshell", "The executor to use")
-	clientPemFlag = flag.String("client_pem", "client.pem", "The file path for the client pem (private+public) key file")
+	interactiveModeFlag = flag.Bool("interactive", false, "Interactive mode")
+	serverFlag          = flag.String("server", "http://localhost:62677", "The endpoint server address")
+	executorFlag        = flag.String("executor", "winshell", "The executor to use")
+	clientPemFlag       = flag.String("client_pem", "client.pem", "The file path for the client pem (private+public) key file")
 )
 
 func handleRecovery() {
@@ -22,24 +24,7 @@ func handleRecovery() {
 	}
 }
 
-func main() {
-	defer handleRecovery()
-
-	flag.Parse()
-
-	exeAndArgs := flag.Args()
-	if len(exeAndArgs) == 0 {
-		log.Fatal("Need at least one additional argument")
-	}
-
-	var exe string
-	var args []string = []string{}
-
-	exe = exeAndArgs[0]
-	if len(exeAndArgs) > 1 {
-		args = exeAndArgs[1:]
-	}
-
+func execute(exe string, args ...string) {
 	pvtKey, err := shared.ReadPemKey(*clientPemFlag)
 	if err != nil {
 		log.Fatalf("Cannot read client pem file, error: %s", err.Error())
@@ -72,4 +57,30 @@ func main() {
 		  fmt.Println(string(plaintextBytes))
 		*/
 	}
+}
+
+func main() {
+	defer handleRecovery()
+
+	flag.Parse()
+
+	if *interactiveModeFlag {
+		handleInteractiveMode()
+		os.Exit(0)
+	}
+
+	exeAndArgs := flag.Args()
+	if len(exeAndArgs) == 0 {
+		log.Fatal("Need at least one additional argument")
+	}
+
+	var exe string
+	var args []string = []string{}
+
+	exe = exeAndArgs[0]
+	if len(exeAndArgs) > 1 {
+		args = exeAndArgs[1:]
+	}
+
+	execute(exe, args...)
 }
