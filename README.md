@@ -90,6 +90,10 @@ func main() {
 }
 ```
 
+## Known gotchas
+
+There is some funny backslash escaping with the `interactive` mode. This is due to the way the library `github.com/nproc/parseargs-go` handles escaping of backslashes. So if you for instance run psexec with `psexec \\mymachine` it will escape the double backslash into a single.
+
 ## TODO
 
 - Unit Tests

@@ -49,5 +49,11 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		return err
 	}
 
-	return streamer.ExecAndWait()
+	err = streamer.ExecAndWait()
+	if err != nil {
+		h.logger.Warningf("Unable to execute command, error was: %s", err.Error())
+		return err
+	}
+
+	return nil
 }
