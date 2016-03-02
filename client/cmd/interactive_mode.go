@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/nproc/parseargs-go"
+	"github.com/golang-devops/parsecommand"
 	"log"
 	"os"
 	"strings"
@@ -28,7 +28,7 @@ func handleInteractiveMode() {
 			os.Exit(0)
 		}
 
-		exeAndArgs, err := parseargs.Parse(line)
+		exeAndArgs, err := parsecommand.Parse(line)
 		if err != nil {
 			color.Red("Cannot parse line '%s', error: %s", line, err.Error())
 			continue
