@@ -21,6 +21,7 @@ func StartWatcher(path string, eventHandler WatcherEventHandler) (*fsnotify.Watc
 	}
 
 	go func() {
+		defer recover()
 		for {
 			select {
 			case event := <-watcher.Events:

@@ -2,10 +2,12 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
@@ -24,39 +26,48 @@ func handleRecovery() {
 	}
 }
 
-func execute(exe string, args ...string) {
-	pvtKey, err := shared.ReadPemKey(*clientPemFlag)
+func execute(onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
+	pvtKey, err := shared.ReadPemKey(clientPemPath)
 	if err != nil {
-		log.Fatalf("Cannot read client pem file, error: %s", err.Error())
+		return fmt.Errorf("Cannot read client pem file, error: %s", err.Error())
 	}
 
 	c := client.New(pvtKey)
 
-	session, err := c.RequestNewSession(*serverFlag)
+	session, err := c.RequestNewSession(server)
 	if err != nil {
-		log.Fatalf("Unable to create new session, error: %s", err.Error())
+		return fmt.Errorf("Unable to create new session, error: %s", err.Error())
 	}
 
-	fmt.Printf("Using session id: %d\n", session.SessionId())
+	onFeedback(fmt.Sprintf("Using session id: %d\n", session.SessionId()))
 
-	resp, err := session.StartExecRequest(&shared.ExecDto{*executorFlag, exe, args})
+	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, args})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer resp.Body.Close()
 
 	scanner := bufio.NewScanner(resp.Body)
+	var allFeedback bytes.Buffer
 	for scanner.Scan() {
-		fmt.Println(scanner.Text())
+		txt := scanner.Text()
+		allFeedback.WriteString(txt)
+		onFeedback(txt)
 
 		/*cipher := scanner.Bytes()
 		  plaintextBytes, err := shared.DecryptSymmetric(session.SessionToken(), cipher)
 		  if err != nil {
-		      log.Fatalf("Unable read encrypted server response, error: %s", err.Error())
+		      return fmt.Errorf("Unable read encrypted server response, error: %s", err.Error())
 		  }
-		  fmt.Println(string(plaintextBytes))
+		  onFeedback(string(plaintextBytes))
 		*/
 	}
+
+	if !strings.HasSuffix(strings.TrimSpace(allFeedback.String()), shared.RESPONSE_EOF) {
+		return fmt.Errorf("The EOF string '%s' was not found at the end of the response. Assuming the connection got interrupted.", shared.RESPONSE_EOF)
+	}
+
+	return nil
 }
 
 func main() {
@@ -82,5 +93,11 @@ func main() {
 		args = exeAndArgs[1:]
 	}
 
-	execute(exe, args...)
+	onFeedback := func(fb string) {
+		fmt.Println(fb)
+	}
+	err := execute(onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"github.com/fatih/color"
 	"github.com/nproc/parseargs-go"
 	"log"
@@ -41,10 +42,18 @@ func handleInteractiveMode() {
 			args = exeAndArgs[1:]
 		}
 
+		onFeedback := func(fb string) {
+			fmt.Println(fb)
+		}
+
 		color.Green("Exe '%s' and args '%#v'", exe, args)
 		color.Yellow("-------------------------------------")
 		println()
-		execute(exe, args...)
+		err = execute(onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
+		if err != nil {
+			color.Red("Execute failed with error: %s", err.Error())
+			continue
+		}
 		println()
 		color.Yellow("-------------------------------------")
 		println()
