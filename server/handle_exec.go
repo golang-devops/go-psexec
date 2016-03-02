@@ -31,9 +31,11 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		return err
 	}
 
+	ip := h.getIPFromRequest(c.Request())
+	hostNames := h.getHostNamesFromIP(ip)
 	h.logger.Infof(
-		"Starting command (remote ip %s), exe = '%s', args = '%#v'",
-		h.getIPFromRequest(c.Request()), dto.Exe, dto.Args)
+		"Starting command (remote ip %s, hostnames = %+v), exe = '%s', args = '%#v'",
+		ip, hostNames, dto.Exe, dto.Args)
 
 	streamer, err := execstreamer.NewExecStreamerBuilder().
 		ExecutorName(dto.Executor).

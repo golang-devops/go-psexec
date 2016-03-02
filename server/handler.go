@@ -51,3 +51,12 @@ func (h *handler) getIPFromRequest(r *http.Request) string {
 	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
 	return ip
 }
+
+func (h *handler) getHostNamesFromIP(ip string) []string {
+	hostNames, err := net.LookupAddr(ip)
+	if err != nil {
+		h.logger.Warningf("Unable to find hostname(s) for IP '%s', error: %s", ip, err.Error())
+		return []string{}
+	}
+	return hostNames
+}
