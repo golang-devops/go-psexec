@@ -10,14 +10,11 @@ import (
 	"io"
 	"net"
 	"net/http"
-
-	"github.com/golang-devops/go-psexec/shared"
 )
 
 type handler struct {
-	logger            service.Logger
-	privateKey        *rsa.PrivateKey
-	AllowedPublicKeys []*shared.AllowedPublicKey
+	logger     service.Logger
+	privateKey *rsa.PrivateKey
 }
 
 func (h *handler) deserializeBody(body io.Reader, dest interface{}) error {
@@ -36,7 +33,7 @@ func (h *handler) getAuthenticatedSessionToken(c *echo.Context) (*sessionToken, 
 		return nil, fmt.Errorf("Context session-id invalid format '%#v'", sessionIdInterface)
 	}
 
-	token, ok := tmpTokens[sessionId]
+	token, ok := tokenStore.GetSessionToken(sessionId)
 	if !ok {
 		return nil, fmt.Errorf("Invalid token")
 	}

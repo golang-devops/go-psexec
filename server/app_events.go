@@ -9,11 +9,11 @@ import (
 )
 
 func (a *app) setAllowedPublicKeys(allowedKeys []*shared.AllowedPublicKey) {
+	allowedKeysStore.Clear()
 	for _, allowedKey := range allowedKeys {
 		a.logger.Infof("Allowing key name '%s'", allowedKey.Name)
+		allowedKeysStore.AppendKey(allowedKey)
 	}
-
-	a.h.AllowedPublicKeys = allowedKeys
 }
 
 func (a *app) OnWatcherEvent(event fsnotify.Event) {

@@ -47,7 +47,9 @@ func main() {
 
 	var additionalArgs []string = []string{}
 
-	if len(*service.ServiceFlag) == 0 || *service.ServiceFlag != "uninstall" {
+	if len(*service.ServiceFlag) == 0 ||
+		(*service.ServiceFlag != "uninstall" && *service.ServiceFlag != "stop" && *service.ServiceFlag != "start") {
+
 		if len(*serverPemFlag) == 0 {
 			flag.Usage()
 			log.Fatalln("The server pem flag is required.")

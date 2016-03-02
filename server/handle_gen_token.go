@@ -30,7 +30,7 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
 
-		sessionId, sessionToken, err := newSessionToken(clientPubKey)
+		sessionId, sessionToken, err := tokenStore.NewSessionToken(clientPubKey)
 		if err != nil {
 			return err
 		}

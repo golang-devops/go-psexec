@@ -57,5 +57,9 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		return err
 	}
 
+	c.Response().Flush()
+	c.Response().Write([]byte(shared.RESPONSE_EOF))
+	c.Response().Flush()
+
 	return nil
 }

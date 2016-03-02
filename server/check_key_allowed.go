@@ -5,12 +5,9 @@ import (
 )
 
 func (h *handler) checkPubKeyAllowed(pubKey *rsa.PublicKey) bool {
-	for _, allowedPubKey := range h.AllowedPublicKeys {
-		if eq, err := allowedPubKey.PublicKeyEquals(pubKey); eq {
-			return true
-		} else if err != nil {
-			h.logger.Warningf("Failed to check public key allowed for name '%s', error: %s", allowedPubKey.Name, err.Error())
-		}
+	isAllowed, warnings := allowedKeysStore.CheckAllowed(pubKey)
+	for _, warn := range warnings {
+		h.logger.Warning(warn)
 	}
-	return false
+	return isAllowed
 }

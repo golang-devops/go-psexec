@@ -30,12 +30,14 @@ func (a *app) registerInterruptSignal() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
+		defer recover()
 		for range c { //for sig := range c {
 			if a.srv != nil {
 				a.logger.Warning("Interrupt signal received, stopping gracefully")
 
 				c2 := make(chan bool, 1)
 				go func() {
+					defer recover()
 					a.srv.Stop(a.gracefulTimeout)
 					c2 <- true
 				}()
@@ -43,9 +45,11 @@ func (a *app) registerInterruptSignal() {
 				select {
 				case <-c2:
 					a.logger.Warning("Graceful shutdown complete")
+					time.Sleep(time.Second) //Sleep a second to give log time to write out
 					os.Exit(0)
 				case <-time.After(a.gracefulTimeout):
 					a.logger.Warning("Normal timeout, forcefully exiting")
+					time.Sleep(time.Second) //Sleep a second to give log time to write out
 					os.Exit(1)
 				}
 			}
@@ -55,6 +59,12 @@ func (a *app) registerInterruptSignal() {
 
 func (a *app) Run(logger service.Logger) {
 	a.logger = logger
+	defer func() {
+		if r := recover(); r != nil {
+			a.logger.Errorf("Panic recovery in service RUN function: %T %+v", r, r)
+		}
+	}()
+
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
 
 	pvtKey, err := shared.ReadPemKey(*serverPemFlag)
@@ -64,7 +74,7 @@ func (a *app) Run(logger service.Logger) {
 	}
 	a.privateKey = pvtKey
 
-	a.h = &handler{logger, a.privateKey, nil}
+	a.h = &handler{logger, a.privateKey}
 
 	allowedKeys, err := shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
 	if err != nil {
@@ -116,6 +126,7 @@ func (a *app) Run(logger service.Logger) {
 	if err != nil {
 		if !strings.Contains(err.Error(), "closed network connection") {
 			logger.Errorf("Unable to ListenAndServe, error: %s", err.Error())
+			time.Sleep(time.Second) //Sleep a second to give log time to write out
 		}
 	}
 }

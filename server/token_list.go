@@ -9,10 +9,14 @@ import (
 )
 
 var (
-	newTokenLock   *sync.RWMutex
 	currentTokenId int
-	tmpTokens      map[int]*sessionToken = map[int]*sessionToken{}
+	tokenStore     = &TokenStore{tokens: make(map[int]*sessionToken)}
 )
+
+type TokenStore struct {
+	sync.RWMutex
+	tokens map[int]*sessionToken
+}
 
 type sessionToken struct {
 	Token           []byte
@@ -27,9 +31,9 @@ func (s *sessionToken) DecryptWithSessionToken(cipher []byte) ([]byte, error) {
 	return shared.NewEncryptedWriterProxy(writer, s.Token)
 }*/
 
-func newSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
-	newTokenLock.Lock()
-	defer newTokenLock.Unlock()
+func (t *TokenStore) NewSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
+	t.Lock()
+	defer t.Unlock()
 
 	key := make([]byte, 32)
 
@@ -40,13 +44,20 @@ func newSessionToken(clientPublicKey *rsa.PublicKey) (int, []byte, error) {
 
 	currentTokenId++
 
-	tmpTokens[currentTokenId] = &sessionToken{key, clientPublicKey}
+	t.tokens[currentTokenId] = &sessionToken{key, clientPublicKey}
 
 	// The key length can be 32, 24, 16  bytes (OR in bits: 128, 192 or 256)
 	return currentTokenId, key, nil
 }
 
+func (t *TokenStore) GetSessionToken(sessionId int) (*sessionToken, bool) {
+	t.Lock()
+	defer t.Unlock()
+
+	tok, ok := t.tokens[sessionId]
+	return tok, ok
+}
+
 func init() {
-	newTokenLock = &sync.RWMutex{}
 	currentTokenId = 1
 }
