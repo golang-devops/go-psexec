@@ -10,8 +10,14 @@ before_install:
   - go get github.com/axw/gocov/gocov
   - go get github.com/mattn/goveralls
 script:
-  - go test -v -covermode=count -coverprofile=coverage.out  #- go test -v -covermode=count -coverprofile=coverage.out ./...
-  - goveralls -coverprofile=coverage.out -service travis-ci -repotoken $COVERALLS_TOKEN
+  - cd $SERVER_DIR
+  - go test -v -covermode=count -coverprofile=server_coverage.out  #- go test -v -covermode=count -coverprofile=coverage.out ./...
+  - goveralls -coverprofile=server_coverage.out -service travis-ci -repotoken $COVERALLS_TOKEN
+  - cd ..
+  - cd $CLIENT_DIR
+  - go test -v -covermode=count -coverprofile=client_coverage.out  #- go test -v -covermode=count -coverprofile=coverage.out ./...
+  - goveralls -coverprofile=client_coverage.out -service travis-ci -repotoken $COVERALLS_TOKEN
+  - cd ..
 after_success:
   - cd $SERVER_DIR && gox -output "dist/server_{{.OS}}_{{.Arch}}_{{.Dir}}"
   - cd ..
