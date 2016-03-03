@@ -2,9 +2,7 @@ language: go
 go:
   - 1.6
 env:
-  - "PATH=/home/travis/gopath/bin:$PATH"
-  - SERVER_DIR=server
-  - CLIENT_DIR=client/cmd
+  - "PATH=/home/travis/gopath/bin:$PATH" SERVER_DIR=server CLIENT_DIR=client/cmd
 before_install:
   - go get github.com/mitchellh/gox
   #- gox -build-toolchain
