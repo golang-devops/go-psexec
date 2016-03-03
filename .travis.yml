@@ -1,0 +1,29 @@
+language: go
+go:
+  - 1.6
+env:
+  - "PATH=/home/travis/gopath/bin:$PATH"
+  - SERVER_DIR=server
+  - CLIENT_DIR=client/cmd
+before_install:
+  - go get github.com/mitchellh/gox
+  #- gox -build-toolchain
+  - go get github.com/tcnksm/ghr
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+script:
+  - go test -v -covermode=count -coverprofile=coverage.out  #- go test -v -covermode=count -coverprofile=coverage.out ./...
+  - goveralls -coverprofile=coverage.out -service travis-ci -repotoken $COVERALLS_TOKEN
+after_success:
+  - cd $SERVER_DIR && gox -output "dist/server_{{.OS}}_{{.Arch}}_{{.Dir}}"
+  - cd ..
+  - cd $CLIENT_DIR && gox -output "dist/client_{{.OS}}_{{.Arch}}_{{.Dir}}"
+  - cd ..
+  - ghr --username golang-devops --token $GITHUB_TOKEN --replace --prerelease --debug pre-release dist/
+# deploy:
+#   provider: bintray
+#   file: ".bintray-descriptor"
+#   user: "francoishill"
+#   key: "$BINTRAY_TOKEN"
+#   #passphrase: "Optional. In case a passphrase is configured on Bintray and GPG signing is used"
+#   #dry-run: "Optional. If true, skips sending requests to Bintray. Useful for testing your configuration"
