@@ -15,6 +15,8 @@ import (
 	"github.com/golang-devops/go-psexec/shared"
 )
 
+const TempVersion = "0.0.1" //Until we integrate with travis
+
 type app struct {
 	logger          service.Logger
 	gracefulTimeout time.Duration
@@ -64,6 +66,8 @@ func (a *app) Run(logger service.Logger) {
 			a.logger.Errorf("Panic recovery in service RUN function: %T %+v", r, r)
 		}
 	}()
+
+	a.logger.Infof("Running server version %s", TempVersion)
 
 	a.gracefulTimeout = 30 * time.Second //Because a command could be busy executing
 
