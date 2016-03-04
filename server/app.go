@@ -15,7 +15,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared"
 )
 
-const TempVersion = "0.0.1" //Until we integrate with travis
+const TempVersion = "0.0.2" //Until we integrate with travis
 
 type app struct {
 	debugMode    bool
