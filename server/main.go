@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/zero-boilerplate/go-api-helpers/service"
 	"log"
 
@@ -9,6 +10,7 @@ import (
 )
 
 const (
+	TempVersion      = "0.0.2" //Until we integrate with travis
 	CURRENT_USER_VAL = "use_current"
 )
 
@@ -27,6 +29,7 @@ var (
 )
 
 func main() {
+	fmt.Println("Version " + TempVersion)
 	flag.Parse()
 
 	if len(*genpemFlag) > 0 {
