@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	execstreamer "github.com/golang-devops/go-exec-streamer"
 	"github.com/labstack/echo"
+	"net/http"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -31,11 +33,19 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		return err
 	}
 
-	ip := h.getIPFromRequest(c.Request())
-	hostNames := h.getHostNamesFromIP(ip)
+	ip := getIPFromRequest(c.Request())
+	hostNames, err := getHostNamesFromIP(ip)
+	if err != nil {
+		h.logger.Warningf("Unable to find hostname(s) for IP '%s', error: %s", ip, err.Error())
+	}
+
 	h.logger.Infof(
 		"Starting command (remote ip %s, hostnames = %+v), exe = '%s', args = '%#v'",
 		ip, hostNames, dto.Exe, dto.Args)
+
+	c.Response().Header().Set("Content-Type", "application/octet-stream")
+	c.Response().Header().Set("Transfer-Encoding", "chunked")
+	c.Response().WriteHeader(http.StatusOK)
 
 	streamer, err := execstreamer.NewExecStreamerBuilder().
 		ExecutorName(dto.Executor).
@@ -45,6 +55,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		// StdoutPrefix("OUT1:").
 		StderrPrefix("ERROR:").
 		AutoFlush().
+		DebugInfo(fmt.Sprintf("ARGS=%+v", dto.Args)).
 		Build()
 
 	if err != nil {

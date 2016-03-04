@@ -18,6 +18,9 @@ import (
 const TempVersion = "0.0.1" //Until we integrate with travis
 
 type app struct {
+	debugMode    bool
+	accessLogger bool
+
 	logger          service.Logger
 	gracefulTimeout time.Duration
 	privateKey      *rsa.PrivateKey
@@ -100,10 +103,14 @@ func (a *app) Run(logger service.Logger) {
 	}
 
 	e := echo.New()
-	e.Debug()
+	if a.debugMode {
+		e.Debug()
+	}
 
-	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+	if a.accessLogger {
+		e.Use(middleware.Logger())
+	}
 
 	t := &htmlTemplateRenderer{}
 	e.SetRenderer(t)
@@ -126,7 +133,7 @@ func (a *app) Run(logger service.Logger) {
 
 	a.registerInterruptSignal()
 
-	a.srv.ListenAndServe()
+	err = a.srv.ListenAndServe()
 	if err != nil {
 		if !strings.Contains(err.Error(), "closed network connection") {
 			logger.Errorf("Unable to ListenAndServe, error: %s", err.Error())

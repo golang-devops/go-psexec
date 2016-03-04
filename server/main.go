@@ -69,7 +69,10 @@ func main() {
 		}
 	}
 
-	a := &app{}
+	a := &app{
+		debugMode:    true,
+		accessLogger: true,
+	}
 
 	builder := service.NewServiceRunnerBuilder("GoPsExec", a).WithOnStopHandler(a).WithAdditionalArguments(additionalArgs...)
 

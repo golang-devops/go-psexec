@@ -8,8 +8,6 @@ import (
 	"github.com/ayufan/golang-kardianos-service"
 	"github.com/labstack/echo"
 	"io"
-	"net"
-	"net/http"
 )
 
 type handler struct {
@@ -39,21 +37,4 @@ func (h *handler) getAuthenticatedSessionToken(c *echo.Context) (*sessionToken, 
 	}
 
 	return token, nil
-}
-
-func (h *handler) getIPFromRequest(r *http.Request) string {
-	if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
-		return ipProxy
-	}
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
-	return ip
-}
-
-func (h *handler) getHostNamesFromIP(ip string) []string {
-	hostNames, err := net.LookupAddr(ip)
-	if err != nil {
-		h.logger.Warningf("Unable to find hostname(s) for IP '%s', error: %s", ip, err.Error())
-		return []string{}
-	}
-	return hostNames
 }

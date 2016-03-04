@@ -24,26 +24,29 @@ type tmpTestsLogger struct {
 }
 
 func (t *tmpTestsLogger) Info(v ...interface{}) error {
-	fmt.Println(v...)
+	// fmt.Println(v...)
 	return nil
 }
 func (t *tmpTestsLogger) Infof(frmt string, a ...interface{}) error {
-	fmt.Println(fmt.Sprintf(frmt, a...))
+	// fmt.Println(fmt.Sprintf(frmt, a...))
 	return nil
 }
 func (t *tmpTestsLogger) Warning(v ...interface{}) error {
-	fmt.Println(v...)
+	t.Lock()
+	defer t.Unlock()
+	// fmt.Println(v...)
+	t.ErrorList = append(t.ErrorList, fmt.Sprintln(v...))
 	return nil
 }
 func (t *tmpTestsLogger) Warningf(frmt string, a ...interface{}) error {
-	fmt.Println(fmt.Sprintf(frmt, a...))
+	t.Warning(fmt.Sprintln(fmt.Sprintf(frmt, a...)))
 	return nil
 }
 func (t *tmpTestsLogger) Error(v ...interface{}) error {
 	t.Lock()
 	defer t.Unlock()
 
-	fmt.Println(v...)
+	// fmt.Println(v...)
 	t.ErrorList = append(t.ErrorList, fmt.Sprintln(v...))
 	return nil
 }
@@ -69,14 +72,14 @@ func doRequest(wg *sync.WaitGroup, logger *tmpTestsLogger, index int, cl *client
 
 	session, err := cl.RequestNewSession(serverBaseUrl)
 	if err != nil {
-		logger.Error(err)
+		logger.Errorf("Index %d (RequestNewSession) err: %s", index, err.Error())
 		return
 	}
 
-	echoStr := fmt.Sprintf("Hallo index-num (%d)", index)
+	echoStr := fmt.Sprintf("Hallo (%d)", index)
 	resp, err := session.StartExecWinshellRequest("echo", echoStr)
 	if err != nil {
-		logger.Error(err)
+		logger.Errorf("Index %d (StartExecWinshellRequest) err: %s", index, err.Error())
 		return
 	}
 	defer resp.Body.Close()
@@ -89,13 +92,13 @@ func doRequest(wg *sync.WaitGroup, logger *tmpTestsLogger, index int, cl *client
 
 	expectedFeedback := []string{echoStr, shared.RESPONSE_EOF}
 	if len(lines) != len(expectedFeedback) {
-		logger.Errorf("Index %d expected was %+v, but actual was %+v", index, expectedFeedback, lines)
+		logger.Errorf("Index %d expected was %#v, but actual was %#v", index, expectedFeedback, lines)
 		return
 	}
 
 	for i, expLine := range expectedFeedback {
 		if cleanFeedbackLine(lines[i]) != cleanFeedbackLine(expLine) {
-			logger.Errorf("Index %d expected was %+v, but actual was %+v", index, expectedFeedback, lines)
+			logger.Errorf("Index %d expected was %#v, but actual was %#v", index, expectedFeedback, lines)
 			return
 		}
 	}
@@ -126,7 +129,7 @@ func TestHighLoad(t *testing.T) {
 		cl, err := setupClient(clientPemPath)
 		So(err, ShouldBeNil)
 
-		num := 150 //1000
+		num := 300
 		var wg sync.WaitGroup
 		wg.Add(num)
 		for i := 0; i < num; i++ {
@@ -137,6 +140,9 @@ func TestHighLoad(t *testing.T) {
 		/*time.Sleep(1 * time.Second)
 		a.srv.Stop(1 * time.Millisecond)*/
 
-		So(logger.ErrorList, ShouldResemble, []string{})
+		for i, e := range logger.ErrorList {
+			t.Errorf("ErrorList[%d]: %s", i, e)
+		}
+		So(len(logger.ErrorList), ShouldEqual, 0)
 	})
 }
