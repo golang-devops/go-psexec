@@ -47,11 +47,18 @@ func execute(onFeedback func(fb string), server, executor, clientPemPath, exe st
 	responseChannel, errChannel := resp.TextResponseChannel()
 
 	allErrors := []error{}
+outerFor:
 	for {
 		select {
-		case feedbackLine := <-responseChannel:
+		case feedbackLine, ok := <-responseChannel:
+			if !ok {
+				break outerFor
+			}
 			onFeedback(feedbackLine)
-		case errLine := <-errChannel:
+		case errLine, ok := <-errChannel:
+			if !ok {
+				break outerFor
+			}
 			allErrors = append(allErrors, errLine)
 		}
 	}
