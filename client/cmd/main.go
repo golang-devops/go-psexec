@@ -68,7 +68,7 @@ outerFor:
 		for _, e := range allErrors {
 			errStrs = append(errStrs, e.Error())
 		}
-		return fmt.Errorf("ERRORS WERE: %s", strings.Join(errStrs, "\n"))
+		return fmt.Errorf("ERRORS WERE: %s", strings.Join(errStrs, "\\n"))
 	}
 
 	return nil
