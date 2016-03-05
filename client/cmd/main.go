@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bufio"
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -45,26 +43,25 @@ func execute(onFeedback func(fb string), server, executor, clientPemPath, exe st
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
 
-	scanner := bufio.NewScanner(resp.Body)
-	var allFeedback bytes.Buffer
-	for scanner.Scan() {
-		txt := scanner.Text()
-		allFeedback.WriteString(txt)
-		onFeedback(txt)
+	responseChannel, errChannel := resp.TextResponseChannel()
 
-		/*cipher := scanner.Bytes()
-		  plaintextBytes, err := shared.DecryptSymmetric(session.SessionToken(), cipher)
-		  if err != nil {
-		      return fmt.Errorf("Unable read encrypted server response, error: %s", err.Error())
-		  }
-		  onFeedback(string(plaintextBytes))
-		*/
+	allErrors := []error{}
+	for {
+		select {
+		case feedbackLine := <-responseChannel:
+			onFeedback(feedbackLine)
+		case errLine := <-errChannel:
+			allErrors = append(allErrors, errLine)
+		}
 	}
 
-	if !strings.HasSuffix(strings.TrimSpace(allFeedback.String()), shared.RESPONSE_EOF) {
-		return fmt.Errorf("The EOF string '%s' was not found at the end of the response. Assuming the connection got interrupted.", shared.RESPONSE_EOF)
+	if len(allErrors) > 0 {
+		errStrs := []string{}
+		for _, e := range allErrors {
+			errStrs = append(errStrs, e.Error())
+		}
+		return fmt.Errorf("ERRORS WERE: %s", strings.Join(errStrs, "\n"))
 	}
 
 	return nil

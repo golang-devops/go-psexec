@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	. "github.com/smartystreets/goconvey/convey"
 	"path/filepath"
@@ -82,12 +81,33 @@ func doRequest(wg *sync.WaitGroup, logger *tmpTestsLogger, index int, cl *client
 		logger.Errorf("Index %d (StartExecWinshellRequest) err: %s", index, err.Error())
 		return
 	}
-	defer resp.Body.Close()
 
-	scanner := bufio.NewScanner(resp.Body)
+	responseChannel, errChannel := resp.TextResponseChannel()
+
 	lines := []string{}
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
+	errors := []error{}
+outerFor:
+	for {
+		select {
+		case feedbackLine, ok := <-responseChannel:
+			if !ok {
+				break outerFor
+			}
+			lines = append(lines, feedbackLine)
+		case errLine, ok := <-errChannel:
+			if !ok {
+				break outerFor
+			}
+			errors = append(errors, errLine)
+		}
+	}
+
+	if len(errors) > 0 {
+		errStrs := []string{}
+		for _, e := range errors {
+			errStrs = append(errStrs, e.Error())
+		}
+		logger.Errorf("ERRORS OCCURRED: %s", strings.Join(errStrs, "\n"))
 	}
 
 	expectedFeedback := []string{echoStr, shared.RESPONSE_EOF}

@@ -53,7 +53,7 @@ func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface
 		return nil, err
 	}
 
-	return &RequestResponse{resp}, nil
+	return &RequestResponse{response: resp}, nil
 }
 
 func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*RequestResponse, error) {
