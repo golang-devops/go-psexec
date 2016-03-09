@@ -46,6 +46,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().Header().Set("Transfer-Encoding", "chunked")
 	c.Response().WriteHeader(http.StatusOK)
+	c.Response().Flush()
 
 	streamer, err := execstreamer.NewExecStreamerBuilder().
 		ExecutorName(dto.Executor).
