@@ -13,6 +13,7 @@ import (
 
 var (
 	interactiveModeFlag = flag.Bool("interactive", false, "Interactive mode")
+	fireAndForgetFlag   = flag.Bool("fire-and-forget", false, "Fire and forget (run the process in the background)")
 	serverFlag          = flag.String("server", "http://localhost:62677", "The endpoint server address")
 	executorFlag        = flag.String("executor", "winshell", "The executor to use")
 	clientPemFlag       = flag.String("client_pem", "client.pem", "The file path for the client pem (private+public) key file")
@@ -24,7 +25,7 @@ func handleRecovery() {
 	}
 }
 
-func execute(onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
+func execute(fireAndForget bool, onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
 	pvtKey, err := shared.ReadPemKey(clientPemPath)
 	if err != nil {
 		return fmt.Errorf("Cannot read client pem file, error: %s", err.Error())
@@ -42,6 +43,11 @@ func execute(onFeedback func(fb string), server, executor, clientPemPath, exe st
 	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, args})
 	if err != nil {
 		return err
+	}
+
+	if fireAndForget {
+		onFeedback("Using fire-and-forget mode so the command will continue in the background.")
+		return nil
 	}
 
 	responseChannel, errChannel := resp.TextResponseChannel()
@@ -100,7 +106,7 @@ func main() {
 	onFeedback := func(fb string) {
 		fmt.Println(fb)
 	}
-	err := execute(onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
+	err := execute(*fireAndForgetFlag, onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
 	if err != nil {
 		log.Fatal(err)
 	}

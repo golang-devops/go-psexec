@@ -49,7 +49,7 @@ func handleInteractiveMode() {
 		color.Green("Exe '%s' and args '%#v'", exe, args)
 		color.Yellow("-------------------------------------")
 		println()
-		err = execute(onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
+		err = execute(false, onFeedback, *serverFlag, *executorFlag, *clientPemFlag, exe, args...)
 		if err != nil {
 			color.Red("Execute failed with error: %s", err.Error())
 			continue
