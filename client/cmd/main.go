@@ -40,7 +40,8 @@ func execute(fireAndForget bool, onFeedback func(fb string), server, executor, c
 
 	onFeedback(fmt.Sprintf("Using session id: %d\n", session.SessionId()))
 
-	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, args})
+	workingDir := ""
+	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, workingDir, args})
 	if err != nil {
 		return err
 	}

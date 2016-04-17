@@ -4,8 +4,9 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"github.com/mozillazg/request"
 	"net/http"
+
+	"github.com/mozillazg/request"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -71,8 +72,16 @@ func (s *Session) StartExecWinshellRequest(exe string, args ...string) (*Request
 	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, Args: args})
 }
 
+func (s *Session) StartExecWinshellRequestWithDir(exe, workingDir string, args ...string) (*RequestResponse, error) {
+	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, WorkingDir: workingDir, Args: args})
+}
+
 func (s *Session) StartExecBashRequest(exe string, args ...string) (*RequestResponse, error) {
 	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, Args: args})
+}
+
+func (s *Session) StartExecBashRequestWithDir(exe, workingDir string, args ...string) (*RequestResponse, error) {
+	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, WorkingDir: workingDir, Args: args})
 }
 
 func (s *Session) EncryptAsJson(v interface{}) ([]byte, error) {

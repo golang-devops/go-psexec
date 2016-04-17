@@ -5,9 +5,10 @@ type EncryptedJsonContainer struct {
 }
 
 type ExecDto struct {
-	Executor string
-	Exe      string
-	Args     []string
+	Executor   string
+	Exe        string
+	WorkingDir string
+	Args       []string
 }
 
 type GetTokenRequestDto struct {
