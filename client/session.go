@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/mozillazg/request"
 
@@ -55,7 +56,12 @@ func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 	}
 
 	pidHeader := resp.Header.Get(shared.PROCESS_ID_HTTP_HEADER_NAME)
-	return &RequestResponse{PidHeader: pidHeader, response: resp}, nil
+	pid, err := strconv.ParseInt(pidHeader, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to parse ProcessID header '%s', error: %s", shared.PROCESS_ID_HTTP_HEADER_NAME, err.Error())
+	}
+
+	return &RequestResponse{Pid: int(pid), response: resp}, nil
 }
 
 func (s *Session) RequestBuilder() SessionRequestBuilderBase {

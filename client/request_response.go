@@ -11,8 +11,8 @@ import (
 )
 
 type RequestResponse struct {
-	PidHeader string
-	response  *request.Response
+	Pid      int
+	response *request.Response
 }
 
 func (r *RequestResponse) TextResponseChannel() (feedback <-chan string, errors <-chan error) {
