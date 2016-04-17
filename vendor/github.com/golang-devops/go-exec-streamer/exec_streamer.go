@@ -9,6 +9,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"sync"
+	"time"
 )
 
 //ExecStreamer is the streamer interface (built by the ExecStreamerBuilder)
@@ -35,6 +36,8 @@ type execStreamer struct {
 	AutoFlush bool
 
 	DebugInfo string
+
+	OnStarted func(startedDetails *StartedDetails)
 }
 
 func (e *execStreamer) recoverPanic(description string) {
@@ -102,6 +105,13 @@ func (e *execStreamer) StartExec() (*exec.Cmd, error) {
 	err = cmd.Start()
 	if err != nil {
 		return nil, err
+	}
+
+	if e.OnStarted != nil {
+		e.OnStarted(&StartedDetails{
+			Pid:  cmd.Process.Pid,
+			Time: time.Now(),
+		})
 	}
 
 	e.stdOutAndErrWaitGroup = &sync.WaitGroup{}

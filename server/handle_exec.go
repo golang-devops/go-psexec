@@ -46,8 +46,12 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().Header().Set("Transfer-Encoding", "chunked")
-	c.Response().WriteHeader(http.StatusOK)
-	c.Response().Flush()
+
+	onStarted := func(startedDetails *execstreamer.StartedDetails) {
+		c.Response().Header().Set("X-GPE-PID", fmt.Sprintf("%d", startedDetails.Pid))
+		c.Response().WriteHeader(http.StatusOK)
+		c.Response().Flush()
+	}
 
 	streamer, err := execstreamer.NewExecStreamerBuilder().
 		ExecutorName(dto.Executor).
@@ -59,6 +63,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		StderrPrefix("ERROR:").
 		AutoFlush().
 		DebugInfo(fmt.Sprintf("ARGS=%+v", dto.Args)).
+		OnStarted(onStarted).
 		Build()
 
 	if err != nil {

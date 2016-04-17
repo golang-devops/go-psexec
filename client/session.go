@@ -54,7 +54,8 @@ func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface
 		return nil, err
 	}
 
-	return &RequestResponse{response: resp}, nil
+	pidHeader := resp.Header.Get("X-GPE-PID")
+	return &RequestResponse{PidHeader: pidHeader, response: resp}, nil
 }
 
 func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*RequestResponse, error) {

@@ -3,14 +3,16 @@ package client
 import (
 	"bufio"
 	"fmt"
-	"github.com/mozillazg/request"
 	"strings"
+
+	"github.com/mozillazg/request"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
 
 type RequestResponse struct {
-	response *request.Response
+	PidHeader string
+	response  *request.Response
 }
 
 func (r *RequestResponse) TextResponseChannel() (feedback <-chan string, errors <-chan error) {

@@ -30,6 +30,8 @@ type ExecStreamerBuilder interface {
 
 	DebugInfo(s string) ExecStreamerBuilder
 
+	OnStarted(onStarted func(*StartedDetails)) ExecStreamerBuilder
+
 	Build() (ExecStreamer, error)
 }
 
@@ -107,6 +109,12 @@ func (e *execStreamerBuilder) AutoFlush() ExecStreamerBuilder {
 //DebugInfo adds debug info to be printed out when errors occur
 func (e *execStreamerBuilder) DebugInfo(s string) ExecStreamerBuilder {
 	e.d.DebugInfo = s
+	return e
+}
+
+//DebugInfo adds debug info to be printed out when errors occur
+func (e *execStreamerBuilder) OnStarted(onStarted func(*StartedDetails)) ExecStreamerBuilder {
+	e.d.OnStarted = onStarted
 	return e
 }
 
