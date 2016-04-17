@@ -2,15 +2,16 @@ package main
 
 import (
 	"crypto/rsa"
+	"os"
+	"os/signal"
+	"strings"
+	"time"
+
 	"github.com/ayufan/golang-kardianos-service"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/tylerb/graceful.v1"
-	"os"
-	"os/signal"
-	"strings"
-	"time"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -120,7 +121,8 @@ func (a *app) Run(logger service.Logger) {
 	// Restricted group
 	r := e.Group("/auth")
 	r.Use(GetClientPubkey())
-	r.Post("/exec", a.h.handleExecFunc)
+	r.Post("/stream", a.h.handleStreamFunc)
+	r.Post("/start", a.h.handleStartFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 

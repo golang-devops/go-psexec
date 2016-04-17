@@ -38,7 +38,7 @@ func (s *Session) NewRequest() *request.Request {
 	return req
 }
 
-func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*RequestResponse, error) {
+func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*RequestResponse, error) {
 	url := s.GetFullServerUrl(relUrl)
 
 	encryptedJson, err := s.EncryptAsJson(rawJsonData)
@@ -54,35 +54,12 @@ func (s *Session) StartEncryptedJsonRequest(relUrl string, rawJsonData interface
 		return nil, err
 	}
 
-	pidHeader := resp.Header.Get("X-GPE-PID")
+	pidHeader := resp.Header.Get(shared.PROCESS_ID_HTTP_HEADER_NAME)
 	return &RequestResponse{PidHeader: pidHeader, response: resp}, nil
 }
 
-func (s *Session) StartExecRequest(execDto *shared.ExecDto) (*RequestResponse, error) {
-	relUrl := "/auth/exec"
-
-	resp, err := s.StartEncryptedJsonRequest(relUrl, execDto)
-	if err != nil {
-		return nil, fmt.Errorf("Unable make POST request to url '%s', error: %s", relUrl, err.Error())
-	}
-
-	return resp, nil
-}
-
-func (s *Session) StartExecWinshellRequest(exe string, args ...string) (*RequestResponse, error) {
-	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, Args: args})
-}
-
-func (s *Session) StartExecWinshellRequestWithDir(exe, workingDir string, args ...string) (*RequestResponse, error) {
-	return s.StartExecRequest(&shared.ExecDto{Executor: "winshell", Exe: exe, WorkingDir: workingDir, Args: args})
-}
-
-func (s *Session) StartExecBashRequest(exe string, args ...string) (*RequestResponse, error) {
-	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, Args: args})
-}
-
-func (s *Session) StartExecBashRequestWithDir(exe, workingDir string, args ...string) (*RequestResponse, error) {
-	return s.StartExecRequest(&shared.ExecDto{Executor: "bash", Exe: exe, WorkingDir: workingDir, Args: args})
+func (s *Session) RequestBuilder() SessionRequestBuilderBase {
+	return NewSessionRequestBuilder(s)
 }
 
 func (s *Session) EncryptAsJson(v interface{}) ([]byte, error) {

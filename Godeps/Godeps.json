@@ -20,14 +20,6 @@
 			"Rev": "9aae6aaa22315390f03959adca2c4d395b02fcef"
 		},
 		{
-			"ImportPath": "github.com/golang-devops/go-exec-streamer",
-			"Rev": "a3904d85ed7bc310182aee17427aebd38729c73f"
-		},
-		{
-			"ImportPath": "github.com/golang-devops/parsecommand",
-			"Rev": "d63f96042ac4162225a9b2d0fe216244d020efe9"
-		},
-		{
 			"ImportPath": "github.com/gopherjs/gopherjs/js",
 			"Comment": "go1.5-16-ge2a337c",
 			"Rev": "e2a337cd781068e1cf6a23f5e0c1e1ea7e2d927b"

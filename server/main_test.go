@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	. "github.com/smartystreets/goconvey/convey"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
@@ -163,6 +164,6 @@ func TestHighLoad(t *testing.T) {
 		for i, e := range logger.ErrorList {
 			t.Errorf("ErrorList[%d]: %s", i, e)
 		}
-		So(len(logger.ErrorList), ShouldEqual, 0)
+		So(logger.ErrorList, ShouldResemble, []string{})
 	})
 }

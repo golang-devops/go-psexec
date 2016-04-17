@@ -3,14 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/zero-boilerplate/go-api-helpers/service"
 	"log"
+
+	"github.com/zero-boilerplate/go-api-helpers/service"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
 
 const (
-	TempVersion      = "0.0.2" //Until we integrate with travis
+	TempVersion      = "0.0.3" //Until we integrate with travis
 	CURRENT_USER_VAL = "use_current"
 )
 
