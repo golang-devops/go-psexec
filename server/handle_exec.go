@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	execstreamer "github.com/golang-devops/go-exec-streamer"
 	"github.com/labstack/echo"
-	"net/http"
 
 	"github.com/golang-devops/go-psexec/shared"
 )
@@ -40,8 +41,8 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 	}
 
 	h.logger.Infof(
-		"Starting command (remote ip %s, hostnames = %+v), exe = '%s', args = '%#v'",
-		ip, hostNames, dto.Exe, dto.Args)
+		"Starting command (remote ip %s, hostnames = %+v), exe = '%s', args = '%#v' (working dir '%s')",
+		ip, hostNames, dto.Exe, dto.Args, dto.WorkingDir)
 
 	c.Response().Header().Set("Content-Type", "application/octet-stream")
 	c.Response().Header().Set("Transfer-Encoding", "chunked")
@@ -52,6 +53,7 @@ func (h *handler) handleExecFunc(c *echo.Context) error {
 		ExecutorName(dto.Executor).
 		Exe(dto.Exe).
 		Args(dto.Args...).
+		Dir(dto.WorkingDir).
 		Writers(c.Response()). //Writers(sessionToken.NewEncryptedWriter(c.Response())).
 		// StdoutPrefix("OUT1:").
 		StderrPrefix("ERROR:").
