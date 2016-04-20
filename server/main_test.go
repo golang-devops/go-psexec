@@ -77,9 +77,9 @@ func doRequest(wg *sync.WaitGroup, logger *tmpTestsLogger, index int, cl *client
 	}
 
 	echoStr := fmt.Sprintf("Hallo (%d)", index)
-	resp, err := session.StartExecWinshellRequest("echo", echoStr)
+	resp, err := session.ExecRequestBuilder().Winshell().Exe("echo").Args(echoStr).BuildAndDoRequest()
 	if err != nil {
-		logger.Errorf("Index %d (StartExecWinshellRequest) err: %s", index, err.Error())
+		logger.Errorf("Index %d (ExecRequestBuilder echo) err: %s", index, err.Error())
 		return
 	}
 

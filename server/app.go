@@ -123,6 +123,7 @@ func (a *app) Run(logger service.Logger) {
 	r.Use(GetClientPubkey())
 	r.Post("/stream", a.h.handleStreamFunc)
 	r.Post("/start", a.h.handleStartFunc)
+	r.Post("/upload-tar", a.h.handleUploadTarFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 
