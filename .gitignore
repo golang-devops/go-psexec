@@ -23,3 +23,5 @@ _testmain.go
 *.test
 *.prof
 *.pem
+/client/cmd/run.bat
+/server/run.bat
