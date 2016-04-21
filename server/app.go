@@ -124,6 +124,7 @@ func (a *app) Run(logger service.Logger) {
 	r.Post("/stream", a.h.handleStreamFunc)
 	r.Post("/start", a.h.handleStartFunc)
 	r.Post("/upload-tar", a.h.handleUploadTarFunc)
+	r.Get("/download-tar", a.h.handleDownloadTarFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 

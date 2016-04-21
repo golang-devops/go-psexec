@@ -2,26 +2,15 @@ package tar_io
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 )
 
-func NewDirectoryTarProvider(fullDirPath, filePattern, remoteBasePath string) TarProvider {
-	return &directoryTarProvider{
-		fullDirPath:    fullDirPath,
-		filePattern:    filePattern,
-		remoteBasePath: remoteBasePath,
-	}
-}
-
 type directoryTarProvider struct {
-	fullDirPath    string
-	filePattern    string
-	remoteBasePath string
+	fullDirPath string
+	filePattern string
 }
-
-func (d *directoryTarProvider) IsDir() bool            { return true }
-func (d *directoryTarProvider) RemoteBasePath() string { return d.remoteBasePath }
 
 func (d *directoryTarProvider) Files() <-chan *TarFile {
 	filesChanRW := make(chan *TarFile)
@@ -51,9 +40,13 @@ func (d *directoryTarProvider) Files() <-chan *TarFile {
 
 			relPath = relPath[1:]
 
-			contentReadCloser, err := os.OpenFile(path, os.O_RDONLY, 0)
-			if err != nil {
-				return fmt.Errorf("Unable to read file '%s', error: %s", path, err.Error())
+			var contentReadCloser io.ReadCloser = nil
+			if !info.IsDir() {
+				tmpContentReadCloser, err := os.OpenFile(path, os.O_RDONLY, 0)
+				if err != nil {
+					return fmt.Errorf("Unable to read file '%s', error: %s", path, err.Error())
+				}
+				contentReadCloser = tmpContentReadCloser
 			}
 
 			isOnlyFile := false
@@ -69,4 +62,10 @@ func (d *directoryTarProvider) Files() <-chan *TarFile {
 	}()
 
 	return filesChanRW
+}
+
+type emptyReader struct{}
+
+func (e *emptyReader) Read(p []byte) (int, error) {
+	return 0, nil
 }

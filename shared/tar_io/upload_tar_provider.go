@@ -10,11 +10,11 @@ import (
 )
 
 type UploadHandler interface {
-	ReadPipe(*io.PipeReader) error
+	Read(reader io.Reader) error
 	Done() error
 }
 
-func UploadTar(tarProvider TarProvider, handler UploadHandler) error {
+func UploadProvider(tarProvider TarProvider, handler UploadHandler) error {
 	pipeReader, pipeWriter := io.Pipe()
 	tarWriter := tar.NewWriter(pipeWriter)
 	defer pipeReader.Close() //TODO: Is this necessary?
@@ -47,7 +47,7 @@ func UploadTar(tarProvider TarProvider, handler UploadHandler) error {
 		}
 	}()
 
-	err := handler.ReadPipe(pipeReader)
+	err := handler.Read(pipeReader)
 	if err != nil {
 		return fmt.Errorf("Error uploading tar stream to pipe reader, error: %s", err.Error())
 	}

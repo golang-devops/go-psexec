@@ -28,10 +28,11 @@ func WriteToTar(tarWriter *tar.Writer, file *TarFile) error {
 		return fmt.Errorf("Unable to write tar header for file '%s', error: %s", file.FileName, err.Error())
 	}
 
-	if file.Info.IsDir() {
-		return fmt.Errorf("Unexpected usage of WriteToTar method with IsDir == TRUE (file name was '%s')", file.FileName)
+	if !file.HasContent() {
+		return nil
 	}
 
+	defer file.ContentReadCloser.Close()
 	_, err = io.Copy(tarWriter, file.ContentReadCloser)
 	return err
 }

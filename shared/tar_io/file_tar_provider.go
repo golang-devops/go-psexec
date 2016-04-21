@@ -5,20 +5,9 @@ import (
 	"os"
 )
 
-func NewFileTarProvider(fullFilePath, remoteBasePath string) TarProvider {
-	return &fileTarProvider{
-		fullFilePath:   fullFilePath,
-		remoteBasePath: remoteBasePath,
-	}
-}
-
 type fileTarProvider struct {
-	fullFilePath   string
-	remoteBasePath string
+	fullFilePath string
 }
-
-func (f *fileTarProvider) IsDir() bool            { return false }
-func (f *fileTarProvider) RemoteBasePath() string { return f.remoteBasePath }
 
 func (f *fileTarProvider) Files() <-chan *TarFile {
 	filesChanRW := make(chan *TarFile)
@@ -27,7 +16,6 @@ func (f *fileTarProvider) Files() <-chan *TarFile {
 	go func() {
 		defer close(filesChanRW)
 
-		//TODO: Is this correct
 		tarFilePath := f.fullFilePath
 		fileInfo, err := os.Stat(f.fullFilePath)
 		if err != nil {

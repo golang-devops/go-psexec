@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/mozillazg/request"
 
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/tar_io"
 )
 
 type Session struct {
@@ -78,7 +80,8 @@ func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 	return &ExecResponse{Pid: int(pid), response: resp}, nil
 }
 
-func (s *Session) UploadTarStream(relUrl, remoteBasePath string, isDir bool, reader io.Reader) (*UploadResponse, error) {
+func (s *Session) UploadTarStream(remotePath string, reader io.Reader) (*UploadResponse, error) {
+	relUrl := "/auth/upload-tar"
 	url := s.GetFullServerUrl(relUrl)
 
 	req, err := s.newNativeHttpRequest("POST", url, reader)
@@ -86,20 +89,42 @@ func (s *Session) UploadTarStream(relUrl, remoteBasePath string, isDir bool, rea
 		return nil, fmt.Errorf("Unable to create http request, error: %s", err.Error())
 	}
 
-	isDirHeader := "0"
-	if isDir {
-		isDirHeader = "1"
-	}
-
-	req.Header.Add(shared.BASE_PATH_HTTP_HEADER_NAME, remoteBasePath)
-	req.Header.Add(shared.IS_DIR_HTTP_HEADER_NAME, isDirHeader)
+	req.Header.Add(shared.BASE_PATH_HTTP_HEADER_NAME, remotePath)
 
 	resp, err := s.newHttpClient().Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to make request, error: %s", err.Error())
+		return nil, fmt.Errorf("Unable to make POST request, error: %s", err.Error())
 	}
 
 	return &UploadResponse{response: resp}, nil
+}
+
+func (s *Session) DownloadTarStream(queryValues url.Values, tarReceiver tar_io.TarReceiver) error {
+	relUrl := "/auth/download-tar?" + queryValues.Encode()
+	url := s.GetFullServerUrl(relUrl)
+
+	req, err := s.newNativeHttpRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("Unable to create http request, error: %s", err.Error())
+	}
+
+	resp, err := s.newHttpClient().Do(req)
+	if err != nil {
+		return fmt.Errorf("Unable to make GET request, error: %s", err.Error())
+	}
+	defer resp.Body.Close()
+
+	err = checkResponse(resp)
+	if err != nil {
+		return fmt.Errorf("Response error in downloading tar stream, error: %s", err.Error())
+	}
+
+	err = tar_io.SaveTarToReceiver(resp.Body, tarReceiver)
+	if err != nil {
+		return fmt.Errorf("Unable to save response body as TAR, error: %s", err.Error())
+	}
+
+	return nil
 }
 
 func (s *Session) ExecRequestBuilder() SessionExecRequestBuilderBase {

@@ -88,14 +88,21 @@ func TestUploadTarDirectory(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(localFileList), ShouldBeGreaterThan, 0)
 
-		// Make it more obvious that this directory is "populated" with the server which might be another machine
+		// TODO: Make it more obvious that this directory is "populated" with the server which might be another machine
 		// but for tests we plan to make the server startup locally on a different port so we can interact with it
 		tempRemoteBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempRemoteBasePath)
 
-		dirTarProvider := tar_io.NewDirectoryTarProvider(localAbsTestdataDir, "", tempRemoteBasePath)
-		err = sessionFileSystem.UploadTar(dirTarProvider)
+		//The dir already exists due to the TempDir method
+		for _, localFullFilePath := range localFileList {
+			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
+			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
+			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
+		}
+
+		dirTarProvider := tar_io.DefaultTarProviderFactory.Dir(localAbsTestdataDir, "")
+		err = sessionFileSystem.UploadTar(dirTarProvider, tempRemoteBasePath)
 		So(err, ShouldBeNil)
 
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
@@ -106,7 +113,8 @@ func TestUploadTarDirectory(t *testing.T) {
 			So(checkFilePropertiesEqual(localFullFilePath, fullTempRemotePath), ShouldBeNil)
 		}
 
-		os.RemoveAll(tempRemoteBasePath)
+		err = os.RemoveAll(tempRemoteBasePath)
+		So(err, ShouldBeNil)
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
 		for _, localFullFilePath := range localFileList {
 			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
@@ -128,31 +136,53 @@ func TestUploadTarFile(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(len(localFileList), ShouldBeGreaterThan, 0)
 
-		// Make it more obvious that this directory is "populated" with the server which might be another machine
+		// TODO: Make it more obvious that this directory is "populated" with the server which might be another machine
 		// but for tests we plan to make the server startup locally on a different port so we can interact with it
 		tempRemoteBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempRemoteBasePath)
 
-		Continue here...
-		dirTarProvider := tar_io.NewFileTarProvider(localAbsTestdataDir, tempRemoteBasePath)
-		err = sessionFileSystem.UploadTar(dirTarProvider)
-		So(err, ShouldBeNil)
-
-		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
 		for _, localFullFilePath := range localFileList {
 			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
 			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
+
+			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
+
+			fileTarProvider := tar_io.DefaultTarProviderFactory.File(localFullFilePath)
+			err = sessionFileSystem.UploadTar(fileTarProvider, fullTempRemotePath)
+			So(err, ShouldBeNil)
+
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, true)
 			So(checkFilePropertiesEqual(localFullFilePath, fullTempRemotePath), ShouldBeNil)
 		}
 
-		os.RemoveAll(tempRemoteBasePath)
+		err = os.RemoveAll(tempRemoteBasePath)
+		So(err, ShouldBeNil)
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
 		for _, localFullFilePath := range localFileList {
 			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
 			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
 		}
+	})
+}
+
+func TestDownloadTarDirectory(t *testing.T) {
+	Convey("Test Downloading a tar directory", t, func() {
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
+		So(err, ShouldBeNil)
+
+		// TODO: Make it more obvious that this directory is "populated" with the server which might be another machine
+		// but for tests we plan to make the server startup locally on a different port so we can interact with it
+		remoteAbsTestdataDir, err := filepath.Abs("testdata/download-tar-dir")
+		So(err, ShouldBeNil)
+
+		tempLocalBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(tempLocalBasePath)
+
+		tarReceiver := tar_io.DefaultTarReceiverFactory.BasePath(tempLocalBasePath)
+		err = sessionFileSystem.DownloadTar(remoteAbsTestdataDir, nil, tarReceiver)
+		So(err, ShouldBeNil)
 	})
 }
