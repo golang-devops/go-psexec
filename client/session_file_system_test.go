@@ -7,11 +7,33 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/golang-devops/go-psexec/shared/tar_io"
+
 	"github.com/go-zero-boilerplate/more_goconvey_assertions"
 
 	"github.com/golang-devops/go-psexec/shared"
 	. "github.com/smartystreets/goconvey/convey"
 )
+
+func testingGetNewSessionFileSystem() (SessionFileSystem, error) {
+	clientPemFile := os.ExpandEnv(`$GOPATH/src/github.com/golang-devops/go-psexec/client/cmd/client.pem`)
+	//TODO: Explicitly start a localhost server too and perhaps use another port to not conflict with "default" port of actual server. Refer to server `main_test.go` file method `TestHighLoad` in the `a.Run(logger)` call for an example
+	serverUrl := "http://localhost:62677"
+
+	clientPvtKey, err := shared.ReadPemKey(clientPemFile)
+	if err != nil {
+		return nil, err
+	}
+
+	client := New(clientPvtKey)
+
+	session, err := client.RequestNewSession(serverUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewSessionFileSystem(session), nil
+}
 
 func listFilesInDir(dir string) ([]string, error) {
 	files := []string{}
@@ -54,23 +76,12 @@ func checkFilePropertiesEqual(filePath1, filePath2 string) error {
 	return nil
 }
 
-func TestUploadDir(t *testing.T) {
-	Convey("Test Uploading a directory", t, func() {
-		clientPemFile := os.ExpandEnv(`$GOPATH/src/github.com/golang-devops/go-psexec/client/cmd/client.pem`)
-		//TODO: Explicitly start a localhost server too and perhaps use another port to not conflict with "default" port of actual server. Refer to server `main_test.go` file method `TestHighLoad` in the `a.Run(logger)` call for an example
-		serverUrl := "http://localhost:62677"
-
-		clientPvtKey, err := shared.ReadPemKey(clientPemFile)
+func TestUploadTarDirectory(t *testing.T) {
+	Convey("Test Uploading a tar directory", t, func() {
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
 		So(err, ShouldBeNil)
 
-		client := New(clientPvtKey)
-
-		session, err := client.RequestNewSession(serverUrl)
-		So(err, ShouldBeNil)
-
-		sessionFileSystem := NewSessionFileSystem(session)
-
-		localAbsTestdataDir, err := filepath.Abs("testdata/dir-reader")
+		localAbsTestdataDir, err := filepath.Abs("testdata/upload-tar-dir")
 		So(err, ShouldBeNil)
 
 		localFileList, err := listFilesInDir(localAbsTestdataDir)
@@ -83,8 +94,8 @@ func TestUploadDir(t *testing.T) {
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempRemoteBasePath)
 
-		localTarReader := NewDirTarReader(localAbsTestdataDir, "", tempRemoteBasePath)
-		err = sessionFileSystem.Upload(localTarReader)
+		dirTarProvider := tar_io.NewDirectoryTarProvider(localAbsTestdataDir, "", tempRemoteBasePath)
+		err = sessionFileSystem.UploadTar(dirTarProvider)
 		So(err, ShouldBeNil)
 
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
@@ -97,5 +108,51 @@ func TestUploadDir(t *testing.T) {
 
 		os.RemoveAll(tempRemoteBasePath)
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
+		for _, localFullFilePath := range localFileList {
+			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
+			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
+			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
+		}
+	})
+}
+
+func TestUploadTarFile(t *testing.T) {
+	Convey("Test Uploading a tar directory", t, func() {
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
+		So(err, ShouldBeNil)
+
+		localAbsTestdataDir, err := filepath.Abs("testdata/upload-tar-file")
+		So(err, ShouldBeNil)
+
+		localFileList, err := listFilesInDir(localAbsTestdataDir)
+		So(err, ShouldBeNil)
+		So(len(localFileList), ShouldBeGreaterThan, 0)
+
+		// Make it more obvious that this directory is "populated" with the server which might be another machine
+		// but for tests we plan to make the server startup locally on a different port so we can interact with it
+		tempRemoteBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(tempRemoteBasePath)
+
+		Continue here...
+		dirTarProvider := tar_io.NewFileTarProvider(localAbsTestdataDir, tempRemoteBasePath)
+		err = sessionFileSystem.UploadTar(dirTarProvider)
+		So(err, ShouldBeNil)
+
+		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
+		for _, localFullFilePath := range localFileList {
+			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
+			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
+			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, true)
+			So(checkFilePropertiesEqual(localFullFilePath, fullTempRemotePath), ShouldBeNil)
+		}
+
+		os.RemoveAll(tempRemoteBasePath)
+		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
+		for _, localFullFilePath := range localFileList {
+			relPath := localFullFilePath[len(localAbsTestdataDir)+1:]
+			fullTempRemotePath := filepath.Join(tempRemoteBasePath, relPath)
+			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
+		}
 	})
 }

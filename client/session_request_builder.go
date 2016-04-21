@@ -18,7 +18,7 @@ type SessionRequestBuilder interface {
 	WorkingDir(workingDir string) SessionRequestBuilder
 	Detached() SessionRequestBuilder
 
-	BuildAndDoRequest() (*RequestResponse, error)
+	BuildAndDoRequest() (*ExecResponse, error)
 }
 
 func NewSessionRequestBuilder(session *Session) SessionRequestBuilderBase {
@@ -62,7 +62,7 @@ func (s *sessionRequestBuilder) Detached() SessionRequestBuilder {
 	return s
 }
 
-func (s *sessionRequestBuilder) BuildAndDoRequest() (*RequestResponse, error) {
+func (s *sessionRequestBuilder) BuildAndDoRequest() (*ExecResponse, error) {
 	if strings.TrimSpace(s.dto.Executor) == "" {
 		panic("SessionRequestBuilder requires Executor")
 	}

@@ -1,4 +1,4 @@
-package client
+package tar_io
 
 import (
 	"archive/tar"

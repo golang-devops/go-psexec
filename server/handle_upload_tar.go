@@ -27,11 +27,11 @@ func (h *handler) handleUploadTarFunc(c *echo.Context) error {
 	}
 	isDir := isDirStr == "1"*/
 
-	tarReader := tar.NewReader(req.Body)
+	tarProvider := tar.NewReader(req.Body)
 
 	foundEndOfTar := false
 	for {
-		hdr, err := tarReader.Next()
+		hdr, err := tarProvider.Next()
 		if err != nil {
 			if err == io.EOF {
 				// end of tar archive
@@ -75,7 +75,7 @@ func (h *handler) handleUploadTarFunc(c *echo.Context) error {
 				os.Chtimes(fullDestPath, hdr.AccessTime, hdr.ModTime)
 			}()
 
-			_, err = io.Copy(file, tarReader)
+			_, err = io.Copy(file, tarProvider)
 			if err != nil {
 				return fmt.Errorf("Unable to copy stream to file '%s', error: %s", fullDestPath, err.Error())
 			}

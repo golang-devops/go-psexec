@@ -1,4 +1,4 @@
-package client
+package tar_io
 
 import (
 	"fmt"
@@ -6,44 +6,32 @@ import (
 	"path/filepath"
 )
 
-type TarReader interface {
-	IsDir() bool
-	RemoteBasePath() string
-	Files() (<-chan *TarFile, <-chan error)
-}
-
-func NewDirTarReader(dir, filePattern, remoteBasePath string) TarReader {
-	return &dirTarReader{
-		dir:            dir,
+func NewDirectoryTarProvider(fullDirPath, filePattern, remoteBasePath string) TarProvider {
+	return &directoryTarProvider{
+		fullDirPath:    fullDirPath,
 		filePattern:    filePattern,
 		remoteBasePath: remoteBasePath,
 	}
 }
 
-type dirTarReader struct {
-	dir            string
+type directoryTarProvider struct {
+	fullDirPath    string
 	filePattern    string
 	remoteBasePath string
-	files          []string
 }
 
-func (d *dirTarReader) IsDir() bool {
-	return true
-}
-func (d *dirTarReader) RemoteBasePath() string {
-	return d.remoteBasePath
-}
+func (d *directoryTarProvider) IsDir() bool            { return true }
+func (d *directoryTarProvider) RemoteBasePath() string { return d.remoteBasePath }
 
-func (d *dirTarReader) Files() (<-chan *TarFile, <-chan error) {
+func (d *directoryTarProvider) Files() <-chan *TarFile {
 	filesChanRW := make(chan *TarFile)
-	errorsRW := make(chan error)
 
 	var goRoutineErr error
 	go func() {
 		defer close(filesChanRW)
-		defer close(errorsRW)
 
-		walkErr := filepath.Walk(d.dir, func(path string, info os.FileInfo, errParam error) error {
+		//TODO: This filepath.Walk can later be abstracted for different filesystems with `afero.Walk` from github.com/spf13/afero
+		walkErr := filepath.Walk(d.fullDirPath, func(path string, info os.FileInfo, errParam error) error {
 			if errParam != nil {
 				return errParam
 			}
@@ -56,7 +44,7 @@ func (d *dirTarReader) Files() (<-chan *TarFile, <-chan error) {
 				}
 			}
 
-			relPath := path[len(d.dir):]
+			relPath := path[len(d.fullDirPath):]
 			if relPath == "" {
 				return nil
 			}
@@ -75,10 +63,10 @@ func (d *dirTarReader) Files() (<-chan *TarFile, <-chan error) {
 		})
 
 		if walkErr != nil {
-			goRoutineErr = fmt.Errorf("Unable to walk dir '%s', error: %s", d.dir, walkErr.Error())
+			goRoutineErr = fmt.Errorf("Unable to walk dir '%s', error: %s", d.fullDirPath, walkErr.Error())
 			return
 		}
 	}()
 
-	return filesChanRW, errorsRW
+	return filesChanRW
 }
