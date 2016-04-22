@@ -1,9 +1,8 @@
 package tar_io
 
-var DefaultTarReceiverFactory = &tarReceiverFactory{}
-
 type TarReceiverFactory interface {
-	BasePath(basePath string) TarReceiver
+	Dir(dir string) TarReceiver
+	File(file string) TarReceiver
 }
 
 func NewTarReceiverFactory() TarReceiverFactory {
@@ -12,8 +11,14 @@ func NewTarReceiverFactory() TarReceiverFactory {
 
 type tarReceiverFactory struct{}
 
-func (t *tarReceiverFactory) BasePath(basePath string) TarReceiver {
-	return &basePathTarReceiver{
-		basePath: basePath,
+func (t *tarReceiverFactory) Dir(dir string) TarReceiver {
+	return &dirTarReceiver{
+		dir: dir,
+	}
+}
+
+func (t *tarReceiverFactory) File(file string) TarReceiver {
+	return &fileTarReceiver{
+		file: file,
 	}
 }

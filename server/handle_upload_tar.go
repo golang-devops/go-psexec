@@ -17,6 +17,7 @@ func (h *handler) handleUploadTarFunc(c *echo.Context) error {
 		return fmt.Errorf("Request does not contain header '%s'", shared.BASE_PATH_HTTP_HEADER_NAME)
 	}
 
-	tarReceiver := tar_io.DefaultTarReceiverFactory.BasePath(basePath)
+	h.logger.Infof("Now starting to receive dir '%s'", basePath)
+	tarReceiver := tar_io.Factories.TarReceiver.Dir(basePath)
 	return tar_io.SaveTarToReceiver(req.Body, tarReceiver)
 }

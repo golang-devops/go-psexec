@@ -1,7 +1,5 @@
 package tar_io
 
-var DefaultTarProviderFactory = &tarProviderFactory{}
-
 type TarProviderFactory interface {
 	Dir(fullDirPath, filePattern string) TarProvider
 	File(fullFilePath string) TarProvider

@@ -101,7 +101,7 @@ func TestUploadTarDirectory(t *testing.T) {
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
 		}
 
-		dirTarProvider := tar_io.DefaultTarProviderFactory.Dir(localAbsTestdataDir, "")
+		dirTarProvider := tar_io.Factories.TarProvider.Dir(localAbsTestdataDir, "")
 		err = sessionFileSystem.UploadTar(dirTarProvider, tempRemoteBasePath)
 		So(err, ShouldBeNil)
 
@@ -148,7 +148,7 @@ func TestUploadTarFile(t *testing.T) {
 
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
 
-			fileTarProvider := tar_io.DefaultTarProviderFactory.File(localFullFilePath)
+			fileTarProvider := tar_io.Factories.TarProvider.File(localFullFilePath)
 			err = sessionFileSystem.UploadTar(fileTarProvider, fullTempRemotePath)
 			So(err, ShouldBeNil)
 
@@ -177,12 +177,84 @@ func TestDownloadTarDirectory(t *testing.T) {
 		remoteAbsTestdataDir, err := filepath.Abs("testdata/download-tar-dir")
 		So(err, ShouldBeNil)
 
+		remoteFileList, err := listFilesInDir(remoteAbsTestdataDir)
+		So(err, ShouldBeNil)
+		So(len(remoteFileList), ShouldBeGreaterThan, 0)
+
 		tempLocalBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
 		So(err, ShouldBeNil)
 		defer os.RemoveAll(tempLocalBasePath)
 
-		tarReceiver := tar_io.DefaultTarReceiverFactory.BasePath(tempLocalBasePath)
+		//The dir already exists due to the TempDir method
+		for _, remoteFullFilePath := range remoteFileList {
+			relPath := remoteFullFilePath[len(remoteAbsTestdataDir)+1:]
+			fullTempLocalPath := filepath.Join(tempLocalBasePath, relPath)
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, false)
+		}
+
+		tarReceiver := tar_io.Factories.TarReceiver.Dir(tempLocalBasePath)
 		err = sessionFileSystem.DownloadTar(remoteAbsTestdataDir, nil, tarReceiver)
 		So(err, ShouldBeNil)
+
+		So(tempLocalBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
+		for _, remoteFullFilePath := range remoteFileList {
+			relPath := remoteFullFilePath[len(remoteAbsTestdataDir)+1:]
+			fullTempLocalPath := filepath.Join(tempLocalBasePath, relPath)
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, true)
+			So(checkFilePropertiesEqual(remoteFullFilePath, fullTempLocalPath), ShouldBeNil)
+		}
+
+		err = os.RemoveAll(tempLocalBasePath)
+		So(err, ShouldBeNil)
+		So(tempLocalBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
+		for _, remoteFullFilePath := range remoteFileList {
+			relPath := remoteFullFilePath[len(remoteAbsTestdataDir)+1:]
+			fullTempLocalPath := filepath.Join(tempLocalBasePath, relPath)
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, false)
+		}
+	})
+}
+
+func TestDownloadTarFile(t *testing.T) {
+	Convey("Test Downloading a tar file", t, func() {
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
+		So(err, ShouldBeNil)
+
+		// TODO: Make it more obvious that this directory is "populated" with the server which might be another machine
+		// but for tests we plan to make the server startup locally on a different port so we can interact with it
+		remoteAbsTestdataDir, err := filepath.Abs("testdata/download-tar-file")
+		So(err, ShouldBeNil)
+
+		remoteFileList, err := listFilesInDir(remoteAbsTestdataDir)
+		So(err, ShouldBeNil)
+		So(len(remoteFileList), ShouldBeGreaterThan, 0)
+
+		tempLocalBasePath, err := ioutil.TempDir(os.TempDir(), "gopsexec-client-test-")
+		So(err, ShouldBeNil)
+		defer os.RemoveAll(tempLocalBasePath)
+
+		//The dir already exists due to the TempDir method
+		for _, remoteFullFilePath := range remoteFileList {
+			relPath := remoteFullFilePath[len(remoteAbsTestdataDir)+1:]
+			fullTempLocalPath := filepath.Join(tempLocalBasePath, relPath)
+
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, false)
+
+			tarReceiver := tar_io.Factories.TarReceiver.File(fullTempLocalPath)
+			err = sessionFileSystem.DownloadTar(remoteAbsTestdataDir, nil, tarReceiver)
+			So(err, ShouldBeNil)
+
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, true)
+			So(checkFilePropertiesEqual(remoteFullFilePath, fullTempLocalPath), ShouldBeNil)
+		}
+
+		err = os.RemoveAll(tempLocalBasePath)
+		So(err, ShouldBeNil)
+		So(tempLocalBasePath, more_goconvey_assertions.AssertDirectoryExistance, false)
+		for _, remoteFullFilePath := range remoteFileList {
+			relPath := remoteFullFilePath[len(remoteAbsTestdataDir)+1:]
+			fullTempLocalPath := filepath.Join(tempLocalBasePath, relPath)
+			So(fullTempLocalPath, more_goconvey_assertions.AssertFileExistance, false)
+		}
 	})
 }
