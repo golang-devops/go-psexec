@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 type SessionExecRequestBuilderBase interface {
@@ -22,13 +22,13 @@ type SessionExecRequestBuilder interface {
 }
 
 func NewSessionExecRequestBuilderBase(session *Session) SessionExecRequestBuilderBase {
-	return &sessionExecRequestBuilder{session: session, dto: &shared.ExecDto{}}
+	return &sessionExecRequestBuilder{session: session, dto: &dtos.ExecDto{}}
 }
 
 type sessionExecRequestBuilder struct {
 	session *Session
 
-	dto      *shared.ExecDto
+	dto      *dtos.ExecDto
 	detached bool
 }
 

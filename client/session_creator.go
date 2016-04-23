@@ -5,19 +5,21 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"github.com/mozillazg/request"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/mozillazg/request"
+
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 type sessionCreator struct {
 	pvtKey        *rsa.PrivateKey
 	baseServerUrl string
-	dto           *shared.GenTokenResponseDto
+	dto           *dtos.GenTokenResponseDto
 	sessionToken  []byte
-	msg           *shared.GenTokenResponseMessage
+	msg           *dtos.GenTokenResponseMessage
 	serverPubKey  *rsa.PublicKey
 }
 
@@ -29,7 +31,7 @@ func (s *sessionCreator) RequestToken() error {
 
 	c := new(http.Client)
 	req := request.NewRequest(c)
-	req.Json = &shared.GetTokenRequestDto{pubPKIXBytes}
+	req.Json = &dtos.GetTokenRequestDto{pubPKIXBytes}
 
 	url := combineServerUrl(s.baseServerUrl, "/token")
 	resp, err := req.Post(url)
@@ -47,7 +49,7 @@ func (s *sessionCreator) RequestToken() error {
 		return err
 	}
 
-	dto := &shared.GenTokenResponseDto{}
+	dto := &dtos.GenTokenResponseDto{}
 	err = json.Unmarshal(responseBytes, dto)
 	if err != nil {
 		return err
@@ -73,7 +75,7 @@ func (s *sessionCreator) DecryptMessageWithSessionToken() error {
 		return err
 	}
 
-	msg := &shared.GenTokenResponseMessage{}
+	msg := &dtos.GenTokenResponseMessage{}
 	err = json.Unmarshal(jsonMessage, msg)
 	if err != nil {
 		return err

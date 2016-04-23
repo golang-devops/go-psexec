@@ -8,13 +8,15 @@ import (
 	"github.com/labstack/echo"
 
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 func (h *handler) handleStreamFunc(c *echo.Context) error {
 	req := c.Request()
 	resp := c.Response()
 
-	dto, err := h.getExecDto(c)
+	dto := &dtos.ExecDto{}
+	err := h.getDto(c, dto)
 	if err != nil {
 		return err
 	}

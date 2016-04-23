@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/mozillazg/request"
 
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 	"github.com/golang-devops/go-psexec/shared/tar_io"
 )
 
@@ -64,7 +66,7 @@ func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 	}
 
 	req := s.NewRequest()
-	req.Json = shared.EncryptedJsonContainer{encryptedJson}
+	req.Json = dtos.EncryptedJsonContainer{encryptedJson}
 
 	resp, err := req.Post(url)
 	if err != nil {
@@ -78,6 +80,64 @@ func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 	}
 
 	return &ExecResponse{Pid: int(pid), response: resp}, nil
+}
+
+func (s *Session) DoEncryptedJsonRequest(relUrl string, inputData, destinationObject interface{}) error {
+	url := s.GetFullServerUrl(relUrl)
+
+	encryptedJson, err := s.EncryptAsJson(inputData)
+	if err != nil {
+		return fmt.Errorf("Unable to encrypt DTO as JSON, error: %s", err.Error())
+	}
+
+	req := s.NewRequest()
+	req.Json = dtos.EncryptedJsonContainer{encryptedJson}
+
+	resp, err := req.Post(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if err = checkResponse(resp.Response); err != nil {
+		return err
+	}
+
+	if destinationObject == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	return decoder.Decode(destinationObject)
+}
+
+func (s *Session) MakeGetRequest(relUrl string, queryValues url.Values, destinationObject interface{}) error {
+	relUrlWithQuery := strings.TrimRight(relUrl, "?") + "?" + queryValues.Encode()
+	url := s.GetFullServerUrl(relUrlWithQuery)
+
+	req, err := s.newNativeHttpRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("Unable to create http request (%s), error: %s", url, err.Error())
+	}
+
+	resp, err := s.newHttpClient().Do(req)
+
+	if err != nil {
+		return fmt.Errorf("Unable to make GET request (%s), error: %s", url, err.Error())
+	}
+	defer resp.Body.Close()
+
+	err = checkResponse(resp)
+	if err != nil {
+		return fmt.Errorf("Response error in making GET request (%s), error: %s", url, err.Error())
+	}
+
+	if destinationObject == nil {
+		return nil
+	}
+
+	decoder := json.NewDecoder(resp.Body)
+	return decoder.Decode(destinationObject)
 }
 
 func (s *Session) UploadTarStream(remotePath string, reader io.Reader) (*UploadResponse, error) {

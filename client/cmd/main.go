@@ -9,6 +9,7 @@ import (
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 var (
@@ -41,7 +42,7 @@ func execute(fireAndForget bool, onFeedback func(fb string), server, executor, c
 	onFeedback(fmt.Sprintf("Using session id: %d\n", session.SessionId()))
 
 	workingDir := ""
-	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, workingDir, args})
+	resp, err := session.StartExecRequest(&dtos.ExecDto{executor, exe, workingDir, args})
 	if err != nil {
 		return err
 	}
