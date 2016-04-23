@@ -17,12 +17,12 @@ type SessionFileSystem interface {
 	Stats(remotePath string) (*dtos.StatsDto, error)
 }
 
-func NewSessionFileSystem(session *Session) SessionFileSystem {
+func NewSessionFileSystem(session *session) SessionFileSystem {
 	return &sessionFileSystem{session: session}
 }
 
 type sessionFileSystem struct {
-	session *Session
+	session *session
 }
 
 func (s *sessionFileSystem) DownloadTar(remotePath string, options *DownloadTarOptions, tarReceiver tar_io.TarReceiver) error {

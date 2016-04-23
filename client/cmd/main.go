@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
-	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 var (
@@ -24,6 +23,16 @@ func handleRecovery() {
 	if r := recover(); r != nil {
 		log.Printf("ERROR: %s\n", getErrorStringFromRecovery(r))
 	}
+}
+
+func getExecutorExecRequestBuilder(session client.Session, executor string) client.SessionExecRequestBuilder {
+	builder := session.ExecRequestBuilder()
+	if executor == "winshell" {
+		return builder.Winshell()
+	} else if executor == "bash" {
+		return builder.Bash()
+	}
+	panic("Unsupported client executor: '" + executor + "'")
 }
 
 func execute(fireAndForget bool, onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
@@ -42,7 +51,8 @@ func execute(fireAndForget bool, onFeedback func(fb string), server, executor, c
 	onFeedback(fmt.Sprintf("Using session id: %d\n", session.SessionId()))
 
 	workingDir := ""
-	resp, err := session.StartExecRequest(&dtos.ExecDto{executor, exe, workingDir, args})
+	builder := getExecutorExecRequestBuilder(session, executor)
+	resp, err := builder.Exe(exe).WorkingDir(workingDir).Args(args...).BuildAndDoRequest()
 	if err != nil {
 		return err
 	}

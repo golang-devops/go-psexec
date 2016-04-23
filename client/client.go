@@ -8,7 +8,7 @@ type Client struct {
 	pvtKey *rsa.PrivateKey
 }
 
-func (c *Client) RequestNewSession(baseServerUrl string) (*Session, error) {
+func (c *Client) RequestNewSession(baseServerUrl string) (Session, error) {
 	creator := &sessionCreator{
 		pvtKey:        c.pvtKey,
 		baseServerUrl: baseServerUrl,

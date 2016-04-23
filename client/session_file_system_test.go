@@ -29,12 +29,12 @@ func testingGetNewSessionFileSystem() (SessionFileSystem, error) {
 
 	client := New(clientPvtKey)
 
-	session, err := client.RequestNewSession(serverUrl)
+	tmpSession, err := client.RequestNewSession(serverUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewSessionFileSystem(session), nil
+	return NewSessionFileSystem(tmpSession.(*session)), nil
 }
 
 type copiedTestDataDetails struct {

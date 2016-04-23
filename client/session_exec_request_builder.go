@@ -21,12 +21,12 @@ type SessionExecRequestBuilder interface {
 	BuildAndDoRequest() (*ExecResponse, error)
 }
 
-func NewSessionExecRequestBuilderBase(session *Session) SessionExecRequestBuilderBase {
+func NewSessionExecRequestBuilderBase(session *session) SessionExecRequestBuilderBase {
 	return &sessionExecRequestBuilder{session: session, dto: &dtos.ExecDto{}}
 }
 
 type sessionExecRequestBuilder struct {
-	session *Session
+	session *session
 
 	dto      *dtos.ExecDto
 	detached bool

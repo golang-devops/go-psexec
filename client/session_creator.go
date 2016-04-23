@@ -104,8 +104,8 @@ func (s *sessionCreator) VerifyServerEncryptedSessionToken() error {
 	return shared.VerifySenderMessage(s.serverPubKey, s.sessionToken, s.msg.TokenEncryptionSignature)
 }
 
-func (s *sessionCreator) Create() *Session {
-	return &Session{
+func (s *sessionCreator) Create() Session {
+	return &session{
 		s.baseServerUrl,
 		s.msg.SessionId,
 		s.sessionToken,

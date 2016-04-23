@@ -17,7 +17,16 @@ import (
 	"github.com/golang-devops/go-psexec/shared/tar_io"
 )
 
-type Session struct {
+type Session interface {
+	SessionId() int
+	SessionToken() []byte
+	GetFullServerUrl(relUrl string) string
+	ExecRequestBuilder() SessionExecRequestBuilderBase
+	FileSystem() SessionFileSystem
+	EncryptAsJson(v interface{}) ([]byte, error)
+}
+
+type session struct {
 	baseServerUrl string
 	sessionId     int
 	sessionToken  []byte
@@ -25,30 +34,30 @@ type Session struct {
 	serverPubKey *rsa.PublicKey
 }
 
-func (s *Session) SessionId() int {
+func (s *session) SessionId() int {
 	return s.sessionId
 }
 
-func (s *Session) SessionToken() []byte {
+func (s *session) SessionToken() []byte {
 	return s.sessionToken
 }
 
-func (s *Session) GetFullServerUrl(relUrl string) string {
+func (s *session) GetFullServerUrl(relUrl string) string {
 	return combineServerUrl(s.baseServerUrl, relUrl)
 }
 
-func (s *Session) newHttpClient() *http.Client {
+func (s *session) newHttpClient() *http.Client {
 	return new(http.Client)
 }
 
-func (s *Session) NewRequest() *request.Request {
+func (s *session) NewRequest() *request.Request {
 	c := s.newHttpClient()
 	req := request.NewRequest(c)
 	req.Headers["Authorization"] = "Bearer " + fmt.Sprintf("sid-%d", s.sessionId)
 	return req
 }
 
-func (s *Session) newNativeHttpRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
+func (s *session) newNativeHttpRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(method, urlStr, body)
 	if err != nil {
 		return nil, err
@@ -57,7 +66,7 @@ func (s *Session) newNativeHttpRequest(method, urlStr string, body io.Reader) (*
 	return req, nil
 }
 
-func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*ExecResponse, error) {
+func (s *session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interface{}) (*ExecResponse, error) {
 	url := s.GetFullServerUrl(relUrl)
 
 	encryptedJson, err := s.EncryptAsJson(rawJsonData)
@@ -82,7 +91,7 @@ func (s *Session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 	return &ExecResponse{Pid: int(pid), response: resp}, nil
 }
 
-func (s *Session) DoEncryptedJsonRequest(relUrl string, inputData, destinationObject interface{}) error {
+func (s *session) DoEncryptedJsonRequest(relUrl string, inputData, destinationObject interface{}) error {
 	url := s.GetFullServerUrl(relUrl)
 
 	encryptedJson, err := s.EncryptAsJson(inputData)
@@ -111,7 +120,7 @@ func (s *Session) DoEncryptedJsonRequest(relUrl string, inputData, destinationOb
 	return decoder.Decode(destinationObject)
 }
 
-func (s *Session) MakeGetRequest(relUrl string, queryValues url.Values, destinationObject interface{}) error {
+func (s *session) MakeGetRequest(relUrl string, queryValues url.Values, destinationObject interface{}) error {
 	relUrlWithQuery := strings.TrimRight(relUrl, "?") + "?" + queryValues.Encode()
 	url := s.GetFullServerUrl(relUrlWithQuery)
 
@@ -140,7 +149,7 @@ func (s *Session) MakeGetRequest(relUrl string, queryValues url.Values, destinat
 	return decoder.Decode(destinationObject)
 }
 
-func (s *Session) UploadTarStream(remotePath string, reader io.Reader) (*UploadResponse, error) {
+func (s *session) UploadTarStream(remotePath string, reader io.Reader) (*UploadResponse, error) {
 	relUrl := "/auth/upload-tar"
 	url := s.GetFullServerUrl(relUrl)
 
@@ -159,7 +168,7 @@ func (s *Session) UploadTarStream(remotePath string, reader io.Reader) (*UploadR
 	return &UploadResponse{response: resp}, nil
 }
 
-func (s *Session) DownloadTarStream(queryValues url.Values, tarReceiver tar_io.TarReceiver) error {
+func (s *session) DownloadTarStream(queryValues url.Values, tarReceiver tar_io.TarReceiver) error {
 	relUrl := "/auth/download-tar?" + queryValues.Encode()
 	url := s.GetFullServerUrl(relUrl)
 
@@ -187,15 +196,15 @@ func (s *Session) DownloadTarStream(queryValues url.Values, tarReceiver tar_io.T
 	return nil
 }
 
-func (s *Session) ExecRequestBuilder() SessionExecRequestBuilderBase {
+func (s *session) ExecRequestBuilder() SessionExecRequestBuilderBase {
 	return NewSessionExecRequestBuilderBase(s)
 }
 
-func (s *Session) FileSystem() SessionFileSystem {
+func (s *session) FileSystem() SessionFileSystem {
 	return NewSessionFileSystem(s)
 }
 
-func (s *Session) EncryptAsJson(v interface{}) ([]byte, error) {
+func (s *session) EncryptAsJson(v interface{}) ([]byte, error) {
 	jsonBytes, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

@@ -6,7 +6,7 @@ import (
 )
 
 type tarUploadHandler struct {
-	session    *Session
+	session    *session
 	remotePath string
 	resp       *UploadResponse
 }
