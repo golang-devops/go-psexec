@@ -21,9 +21,12 @@ type Session interface {
 	SessionId() int
 	SessionToken() []byte
 	GetFullServerUrl(relUrl string) string
+	Ping() error
 	ExecRequestBuilder() SessionExecRequestBuilderBase
 	FileSystem() SessionFileSystem
 	EncryptAsJson(v interface{}) ([]byte, error)
+	GetTempDir() (*dtos.TempDirDto, error)
+	GetOsTypeName() (*dtos.OsTypeDto, error)
 }
 
 type session struct {
@@ -121,7 +124,10 @@ func (s *session) DoEncryptedJsonRequest(relUrl string, inputData, destinationOb
 }
 
 func (s *session) MakeGetRequest(relUrl string, queryValues url.Values, destinationObject interface{}) error {
-	relUrlWithQuery := strings.TrimRight(relUrl, "?") + "?" + queryValues.Encode()
+	relUrlWithQuery := strings.TrimRight(relUrl, "?")
+	if queryValues != nil {
+		relUrlWithQuery += "?" + queryValues.Encode()
+	}
 	url := s.GetFullServerUrl(relUrlWithQuery)
 
 	req, err := s.newNativeHttpRequest("GET", url, nil)
@@ -196,6 +202,18 @@ func (s *session) DownloadTarStream(queryValues url.Values, tarReceiver tar_io.T
 	return nil
 }
 
+func (s *session) Ping() error {
+	relUrl := "/auth/ping"
+	dto := &dtos.PingDto{}
+	if err := s.MakeGetRequest(relUrl, nil, dto); err != nil {
+		return err
+	}
+	if !dto.IsPong() {
+		return fmt.Errorf("Unexpected ping text '%s'", dto.Ping)
+	}
+	return nil
+}
+
 func (s *session) ExecRequestBuilder() SessionExecRequestBuilderBase {
 	return NewSessionExecRequestBuilderBase(s)
 }
@@ -211,4 +229,22 @@ func (s *session) EncryptAsJson(v interface{}) ([]byte, error) {
 	}
 
 	return shared.EncryptSymmetric(s.sessionToken, jsonBytes)
+}
+
+func (s *session) GetTempDir() (*dtos.TempDirDto, error) {
+	relUrl := "/auth/get-temp-dir"
+	dto := &dtos.TempDirDto{}
+	if err := s.MakeGetRequest(relUrl, nil, dto); err != nil {
+		return nil, err
+	}
+	return dto, nil
+}
+
+func (s *session) GetOsTypeName() (*dtos.OsTypeDto, error) {
+	relUrl := "/auth/get-os-type"
+	dto := &dtos.OsTypeDto{}
+	if err := s.MakeGetRequest(relUrl, nil, dto); err != nil {
+		return nil, err
+	}
+	return dto, nil
 }
