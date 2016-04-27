@@ -85,6 +85,10 @@ func (s *session) StreamEncryptedJsonRequest(relUrl string, rawJsonData interfac
 		return nil, err
 	}
 
+	if err = checkResponse(resp.Response); err != nil {
+		return nil, err
+	}
+
 	pidHeader := resp.Header.Get(shared.PROCESS_ID_HTTP_HEADER_NAME)
 	pid, err := strconv.ParseInt(pidHeader, 10, 32)
 	if err != nil {
@@ -169,6 +173,10 @@ func (s *session) UploadTarStream(remotePath string, reader io.Reader) (*UploadR
 	resp, err := s.newHttpClient().Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to make POST request, error: %s", err.Error())
+	}
+
+	if err = checkResponse(resp); err != nil {
+		return nil, err
 	}
 
 	return &UploadResponse{response: resp}, nil
