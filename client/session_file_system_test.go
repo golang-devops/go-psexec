@@ -18,7 +18,7 @@ import (
 )
 
 func testingGetNewSessionFileSystem() (SessionFileSystem, error) {
-	clientPemFile := os.ExpandEnv(`$GOPATH/src/github.com/golang-devops/go-psexec/client/cmd/client.pem`)
+	clientPemFile := os.ExpandEnv(`$GOPATH/src/github.com/golang-devops/go-psexec/client/testdata/test_client.pem`)
 	//TODO: Explicitly start a localhost server too and perhaps use another port to not conflict with "default" port of actual server. Refer to server `main_test.go` file method `TestHighLoad` in the `a.Run(logger)` call for an example
 	serverUrl := "http://localhost:62677"
 
