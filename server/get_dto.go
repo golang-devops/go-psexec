@@ -5,33 +5,27 @@ import (
 
 	"github.com/labstack/echo"
 
-	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) getExecDto(c *echo.Context) (*shared.ExecDto, error) {
+func (h *handler) getDto(c *echo.Context, jsonDest interface{}) error {
 	req := c.Request()
 
 	sessionToken, err := h.getAuthenticatedSessionToken(c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	encryptedJsonContainer := &shared.EncryptedJsonContainer{}
+	encryptedJsonContainer := &dtos.EncryptedJsonContainer{}
 	err = h.deserializeBody(req.Body, encryptedJsonContainer)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	decryptedJson, err := sessionToken.DecryptWithSessionToken(encryptedJsonContainer.EncryptedJson)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	dto := &shared.ExecDto{}
-	err = json.Unmarshal(decryptedJson, dto)
-	if err != nil {
-		return nil, err
-	}
-
-	return dto, nil
+	return json.Unmarshal(decryptedJson, jsonDest)
 }

@@ -1,14 +1,7 @@
-package shared
+package dtos
 
 type EncryptedJsonContainer struct {
 	EncryptedJson []byte
-}
-
-type ExecDto struct {
-	Executor   string
-	Exe        string
-	WorkingDir string
-	Args       []string
 }
 
 type GetTokenRequestDto struct {

@@ -1,6 +1,11 @@
 package shared
 
 const (
-	RESPONSE_EOF                = "_GOPSEXEC_EOF_"
+	RESPONSE_EOF        = "_GOPSEXEC_EOF_"
+	END_OF_TAR_FILENAME = "END_OF_TAR"
+)
+
+const (
 	PROCESS_ID_HTTP_HEADER_NAME = "X-GPE-PID"
+	BASE_PATH_HTTP_HEADER_NAME  = "X-GPE-BASE-PATH"
 )

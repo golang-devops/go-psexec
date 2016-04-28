@@ -25,6 +25,16 @@ func handleRecovery() {
 	}
 }
 
+func getExecutorExecRequestBuilder(session client.Session, executor string) client.SessionExecRequestBuilder {
+	builder := session.ExecRequestBuilder()
+	if executor == "winshell" {
+		return builder.Winshell()
+	} else if executor == "bash" {
+		return builder.Bash()
+	}
+	panic("Unsupported client executor: '" + executor + "'")
+}
+
 func execute(fireAndForget bool, onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
 	pvtKey, err := shared.ReadPemKey(clientPemPath)
 	if err != nil {
@@ -41,7 +51,8 @@ func execute(fireAndForget bool, onFeedback func(fb string), server, executor, c
 	onFeedback(fmt.Sprintf("Using session id: %d\n", session.SessionId()))
 
 	workingDir := ""
-	resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, workingDir, args})
+	builder := getExecutorExecRequestBuilder(session, executor)
+	resp, err := builder.Exe(exe).WorkingDir(workingDir).Args(args...).BuildAndDoRequest()
 	if err != nil {
 		return err
 	}

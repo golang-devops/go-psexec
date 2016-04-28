@@ -121,8 +121,16 @@ func (a *app) Run(logger service.Logger) {
 	// Restricted group
 	r := e.Group("/auth")
 	r.Use(GetClientPubkey())
+	r.Get("/ping", a.h.handlePingFunc)
 	r.Post("/stream", a.h.handleStreamFunc)
 	r.Post("/start", a.h.handleStartFunc)
+	r.Post("/upload-tar", a.h.handleUploadTarFunc)
+	r.Get("/download-tar", a.h.handleDownloadTarFunc)
+	r.Post("/delete", a.h.handleDeleteFunc)
+	r.Post("/move", a.h.handleMoveFunc)
+	r.Get("/stats", a.h.handleStatsFunc)
+	r.Get("/get-temp-dir", a.h.handleGetTempDirFunc)
+	r.Get("/get-os-type", a.h.handleGetOsTypeFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 

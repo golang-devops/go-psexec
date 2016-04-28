@@ -10,12 +10,12 @@ import (
 	"github.com/golang-devops/go-psexec/shared"
 )
 
-type RequestResponse struct {
+type ExecResponse struct {
 	Pid      int
 	response *request.Response
 }
 
-func (r *RequestResponse) TextResponseChannel() (feedback <-chan string, errors <-chan error) {
+func (r *ExecResponse) TextResponseChannel() (feedback <-chan string, errors <-chan error) {
 	feedbackRW := make(chan string)
 	errorsRW := make(chan error)
 

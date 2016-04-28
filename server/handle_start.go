@@ -2,20 +2,30 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
+	"github.com/go-zero-boilerplate/path_utils"
 	execstreamer "github.com/golang-devops/go-exec-streamer"
 	"github.com/labstack/echo"
 
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 func (h *handler) handleStartFunc(c *echo.Context) error {
 	req := c.Request()
 	resp := c.Response()
 
-	dto, err := h.getExecDto(c)
+	dto := &dtos.ExecDto{}
+	err := h.getDto(c, dto)
 	if err != nil {
 		return err
+	}
+
+	if exeExists, err := path_utils.FileExists(dto.Exe); err != nil {
+		return fmt.Errorf("Unable to check if Exe path '%s' exists, error: %s", dto.Exe, err.Error())
+	} else if !exeExists {
+		return c.String(http.StatusBadRequest, fmt.Sprintf("Exe path '%s' does not exist. Please specify the full Exe path to run.", dto.Exe))
 	}
 
 	ip := getIPFromRequest(req)

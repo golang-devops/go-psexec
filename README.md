@@ -55,6 +55,7 @@ import (
 
     "github.com/golang-devops/go-psexec/client"
     "github.com/golang-devops/go-psexec/shared"
+    "github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 func main() {
@@ -77,7 +78,7 @@ func main() {
         log.Fatalf("Unable to create new session, error: %s", err.Error())
     }
 
-    resp, err := session.StartExecRequest(&shared.ExecDto{executor, exe, args})
+    resp, err := session.StartExecRequest(&dtos.ExecDto{executor, exe, args})
     if err != nil {
         log.Fatal(err)
     }
@@ -102,3 +103,4 @@ There is some funny backslash escaping with the `interactive` mode. This is due 
 - Authentication
 - Perhaps support for LDAP
 - Support for multiple executors (like using windows shell to "prepend" commands with `cmd /c`)
+- Rework the server code to use `afero` file system instead of raw `os`. Much better for testability and abstraction

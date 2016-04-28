@@ -9,10 +9,11 @@ import (
 	"net/http"
 
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
 func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
-	dto := &shared.GetTokenRequestDto{}
+	dto := &dtos.GetTokenRequestDto{}
 	err := h.deserializeBody(c.Request().Body, dto)
 	if err != nil {
 		return err
@@ -50,7 +51,7 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 			return err
 		}
 
-		jsonMessage, err := json.Marshal(&shared.GenTokenResponseMessage{
+		jsonMessage, err := json.Marshal(&dtos.GenTokenResponseMessage{
 			sessionId,
 			encryptedTokenSignature,
 			serverPubKeyBytes,
@@ -66,7 +67,7 @@ func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
 
 		return c.JSON(
 			200,
-			&shared.GenTokenResponseDto{
+			&dtos.GenTokenResponseDto{
 				encryptedSessionToken,
 				encryptedJsonMessage,
 			},
