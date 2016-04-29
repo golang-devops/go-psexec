@@ -3,3 +3,4 @@
     + Remove local dir github.com/francoishill/afero
 - Consider swapping some code out for https://github.com/xigang/crypto
 - Re-think and enable the server main_test `TestHighLoad`
+- Many more unit tests, especially for `tar_io` package
