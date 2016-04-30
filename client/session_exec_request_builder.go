@@ -10,6 +10,7 @@ import (
 type SessionExecRequestBuilderBase interface {
 	Winshell() SessionExecRequestBuilder
 	Bash() SessionExecRequestBuilder
+	None() SessionExecRequestBuilder
 }
 
 type SessionExecRequestBuilder interface {
@@ -39,6 +40,11 @@ func (s *sessionExecRequestBuilder) Winshell() SessionExecRequestBuilder {
 
 func (s *sessionExecRequestBuilder) Bash() SessionExecRequestBuilder {
 	s.dto.Executor = "bash"
+	return s
+}
+
+func (s *sessionExecRequestBuilder) None() SessionExecRequestBuilder {
+	s.dto.Executor = "none"
 	return s
 }
 
