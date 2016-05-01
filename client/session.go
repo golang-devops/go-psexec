@@ -159,7 +159,7 @@ func (s *session) MakeGetRequest(relUrl string, queryValues url.Values, destinat
 	return decoder.Decode(destinationObject)
 }
 
-func (s *session) UploadTarStream(remotePath string, reader io.Reader) (*UploadResponse, error) {
+func (s *session) UploadTarStream(remotePath string, isDir bool, reader io.Reader) (*UploadResponse, error) {
 	relUrl := "/auth/upload-tar"
 	url := s.GetFullServerUrl(relUrl)
 
@@ -168,7 +168,12 @@ func (s *session) UploadTarStream(remotePath string, reader io.Reader) (*UploadR
 		return nil, fmt.Errorf("Unable to create http request, error: %s", err.Error())
 	}
 
+	isDirVal := "0"
+	if isDir {
+		isDirVal = "1"
+	}
 	req.Header.Add(shared.BASE_PATH_HTTP_HEADER_NAME, remotePath)
+	req.Header.Add(shared.IS_DIR_HTTP_HEADER_NAME, isDirVal)
 
 	resp, err := s.newHttpClient().Do(req)
 	if err != nil {

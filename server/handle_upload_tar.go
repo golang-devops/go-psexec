@@ -17,13 +17,20 @@ func (h *handler) handleUploadTarFunc(c *echo.Context) error {
 	if strings.TrimSpace(basePath) == "" {
 		return fmt.Errorf("Request does not contain header '%s'", shared.BASE_PATH_HTTP_HEADER_NAME)
 	}
+	isDirVal := req.Header.Get(shared.IS_DIR_HTTP_HEADER_NAME)
+	if strings.TrimSpace(isDirVal) == "" {
+		return fmt.Errorf("Request does not contain header '%s'", shared.IS_DIR_HTTP_HEADER_NAME)
+	}
+	isDir := strings.TrimSpace(isDirVal) == "1"
 
-	info, err := os.Stat(basePath)
-	if err != nil {
-		return fmt.Errorf("Unable to obtain stats of path '%s', error: %s", basePath, err.Error())
+	if isDir {
+		//TODO: Is permission fine?
+		if err := os.MkdirAll(basePath, 0755); err != nil {
+			return fmt.Errorf("Unable to create base path %s, error: %s", basePath, err.Error())
+		}
 	}
 
-	if info.IsDir() {
+	if isDir {
 		h.logger.Infof("Now starting to receive dir '%s'", basePath)
 		tarReceiver := tar_io.Factories.TarReceiver.Dir(basePath)
 		return tar_io.SaveTarToReceiver(req.Body, tarReceiver)

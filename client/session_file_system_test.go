@@ -81,7 +81,7 @@ func TestUploadTarDirectory(t *testing.T) {
 		So(err, ShouldBeNil)
 
 		dirTarProvider := tar_io.Factories.TarProvider.Dir(testData.FullDir, "")
-		err = sessionFileSystem.UploadTar(dirTarProvider, tempRemoteBasePath)
+		err = sessionFileSystem.UploadTar(dirTarProvider, tempRemoteBasePath, true)
 		So(err, ShouldBeNil)
 
 		So(tempRemoteBasePath, more_goconvey_assertions.AssertDirectoryExistance, true)
@@ -121,7 +121,7 @@ func TestUploadTarFile(t *testing.T) {
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, false)
 
 			fileTarProvider := tar_io.Factories.TarProvider.File(localFullFilePath)
-			err = sessionFileSystem.UploadTar(fileTarProvider, fullTempRemotePath)
+			err = sessionFileSystem.UploadTar(fileTarProvider, fullTempRemotePath, false)
 			So(err, ShouldBeNil)
 
 			So(fullTempRemotePath, more_goconvey_assertions.AssertFileExistance, true)

@@ -7,6 +7,7 @@ import (
 
 type StatsDto struct {
 	Path    string
+	Exists  bool
 	IsDir   bool
 	ModTime time.Time
 	Mode    os.FileMode

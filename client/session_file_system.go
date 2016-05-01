@@ -11,7 +11,7 @@ import (
 
 type SessionFileSystem interface {
 	DownloadTar(remotePath string, options *DownloadTarOptions, tarReceiver tar_io.TarReceiver) error
-	UploadTar(tarProvider tar_io.TarProvider, remotePath string) error
+	UploadTar(tarProvider tar_io.TarProvider, remotePath string, isDir bool) error
 	Delete(remotePath string) error
 	Move(oldRemotePath, newRemotePath string) error
 	Stats(remotePath string) (*dtos.StatsDto, error)
@@ -42,10 +42,11 @@ func (s *sessionFileSystem) DownloadTar(remotePath string, options *DownloadTarO
 	return nil
 }
 
-func (s *sessionFileSystem) UploadTar(tarProvider tar_io.TarProvider, remotePath string) error {
+func (s *sessionFileSystem) UploadTar(tarProvider tar_io.TarProvider, remotePath string, isDir bool) error {
 	uploadHandler := &tarUploadHandler{
 		session:    s.session,
 		remotePath: remotePath,
+		isDir:      isDir,
 	}
 
 	err := tar_io.UploadProvider(tarProvider, uploadHandler)

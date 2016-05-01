@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -18,11 +19,18 @@ func (h *handler) handleStatsFunc(c *echo.Context) error {
 
 	info, err := os.Stat(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return c.JSON(http.StatusNotFound, &dtos.StatsDto{
+				Path:   path,
+				Exists: false,
+			})
+		}
 		return fmt.Errorf("Unable to get stats of path '%s', error: %s", path, err.Error())
 	}
 
 	returnDto := &dtos.StatsDto{
 		Path:    path,
+		Exists:  true,
 		IsDir:   info.IsDir(),
 		ModTime: info.ModTime(),
 		Mode:    info.Mode(),

@@ -8,11 +8,12 @@ import (
 type tarUploadHandler struct {
 	session    *session
 	remotePath string
+	isDir      bool
 	resp       *UploadResponse
 }
 
 func (t *tarUploadHandler) Read(reader io.Reader) error {
-	resp, err := t.session.UploadTarStream(t.remotePath, reader)
+	resp, err := t.session.UploadTarStream(t.remotePath, t.isDir, reader)
 	if err != nil {
 		return fmt.Errorf("Unable to write to pipe reader, error: %s", err.Error())
 	}
