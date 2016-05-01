@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/labstack/echo"
 
@@ -16,9 +17,15 @@ func (h *handler) handleDeleteFunc(c *echo.Context) error {
 		return err
 	}
 
+	sanitizedPath := strings.Replace(strings.Trim(dto.Path, " /\\"), "\\", "/", -1)
+	if sanitizedPath == "" || sanitizedPath == "." || sanitizedPath == ".." || sanitizedPath == "/" ||
+		strings.HasPrefix(sanitizedPath, "./") || strings.HasPrefix(sanitizedPath, "../") {
+		return fmt.Errorf("Empty paths or relative paths are not allowed, cleaned path was '%s'", sanitizedPath)
+	}
+
 	err = os.RemoveAll(dto.Path)
 	if err != nil {
-		return fmt.Errorf("Unable to delete path '%s', error: %s", dto.Path, err.Error())
+		return fmt.Errorf("Unable to delete path '%s', error: %s", sanitizedPath, err.Error())
 	}
 
 	return nil
