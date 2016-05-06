@@ -3,7 +3,8 @@ package tar_io
 import (
 	"archive/tar"
 	"fmt"
-	"io"
+
+	"github.com/golang-devops/go-psexec/shared/io_throttler"
 )
 
 func WriteToTar(tarWriter *tar.Writer, file *TarFile) error {
@@ -33,6 +34,6 @@ func WriteToTar(tarWriter *tar.Writer, file *TarFile) error {
 	}
 
 	defer file.ContentReadCloser.Close()
-	_, err = io.Copy(tarWriter, file.ContentReadCloser)
+	_, err = io_throttler.CopyThrottled(io_throttler.DefaultIOThrottlingBandwidth, tarWriter, file.ContentReadCloser)
 	return err
 }

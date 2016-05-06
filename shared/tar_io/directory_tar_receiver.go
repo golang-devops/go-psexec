@@ -6,6 +6,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/golang-devops/go-psexec/shared/io_throttler"
 )
 
 type dirTarReceiver struct {
@@ -42,7 +44,7 @@ func (d *dirTarReceiver) OnEntry(tarHeader *tar.Header, tarFileReader io.Reader)
 			os.Chtimes(fullDestPath, tarHeader.AccessTime, tarHeader.ModTime)
 		}()
 
-		_, err = io.Copy(file, tarFileReader)
+		_, err = io_throttler.CopyThrottled(io_throttler.DefaultIOThrottlingBandwidth, file, tarFileReader)
 		if err != nil {
 			return fmt.Errorf("Unable to copy stream to file '%s', error: %s", fullDestPath, err.Error())
 		}

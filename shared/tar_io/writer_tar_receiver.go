@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"fmt"
 	"io"
+
+	"github.com/golang-devops/go-psexec/shared/io_throttler"
 )
 
 type writerTarReceiver struct {
@@ -17,7 +19,7 @@ func (w *writerTarReceiver) OnEntry(tarHeader *tar.Header, tarFileReader io.Read
 	}
 	w.alreadyHaveFile = true
 
-	_, err := io.Copy(w.writer, tarFileReader)
+	_, err := io_throttler.CopyThrottled(io_throttler.DefaultIOThrottlingBandwidth, w.writer, tarFileReader)
 	if err != nil {
 		return fmt.Errorf("Unable to copy stream to buffer, error: %s", err.Error())
 	}
