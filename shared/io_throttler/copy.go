@@ -18,7 +18,7 @@ func CopyThrottled(bandwidth iothrottler.Bandwidth, dest io.Writer, src io.Reade
 	if rc, ok := src.(io.ReadCloser); ok {
 		readCloser = rc
 	} else {
-		readCloser = ioutil.NopCloser(readCloser)
+		readCloser = ioutil.NopCloser(src)
 	}
 
 	throttledFile, err := pool.AddReader(readCloser)
