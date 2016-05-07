@@ -122,6 +122,7 @@ func (a *app) Run(logger service.Logger) {
 	r := e.Group("/auth")
 	r.Use(GetClientPubkey())
 	r.Get("/ping", a.h.handlePingFunc)
+	r.Get("/version", a.h.handleVersionFunc)
 	r.Post("/stream", a.h.handleStreamFunc)
 	r.Post("/start", a.h.handleStartFunc)
 	r.Post("/upload-tar", a.h.handleUploadTarFunc)

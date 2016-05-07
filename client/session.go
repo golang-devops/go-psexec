@@ -22,6 +22,7 @@ type Session interface {
 	SessionToken() []byte
 	GetFullServerUrl(relUrl string) string
 	Ping() error
+	Version() (string, error)
 	ExecRequestBuilder() SessionExecRequestBuilderBase
 	FileSystem() SessionFileSystem
 	EncryptAsJson(v interface{}) ([]byte, error)
@@ -225,6 +226,15 @@ func (s *session) Ping() error {
 		return fmt.Errorf("Unexpected ping text '%s'", dto.Ping)
 	}
 	return nil
+}
+
+func (s *session) Version() (string, error) {
+	relUrl := "/auth/version"
+	dto := &dtos.VersionDto{}
+	if err := s.MakeGetRequest(relUrl, nil, dto); err != nil {
+		return "", err
+	}
+	return dto.Version, nil
 }
 
 func (s *session) ExecRequestBuilder() SessionExecRequestBuilderBase {
