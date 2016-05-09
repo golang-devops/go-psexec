@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/francoishill/afero"
@@ -12,6 +13,8 @@ import (
 	"github.com/go-zero-boilerplate/more_goconvey_assertions"
 	. "github.com/smartystreets/goconvey/convey"
 
+	"github.com/golang-devops/go-psexec/services/encoding/checksums"
+	"github.com/golang-devops/go-psexec/services/filepath_summary"
 	"github.com/golang-devops/go-psexec/shared"
 	"github.com/golang-devops/go-psexec/shared/tar_io"
 	"github.com/golang-devops/go-psexec/shared/testing_utils"
@@ -374,6 +377,93 @@ func TestStats(t *testing.T) {
 			}
 			So(remoteStats.Mode, ShouldEqual, localStats.Mode())
 			So(remoteStats.Size, ShouldEqual, localStats.Size())
+		})
+	})
+}
+
+func getFileSummaryForFile(checksumSvc checksums.Service, filePath string) (*filepath_summary.FileSummary, error) {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return nil, err
+	}
+	checksumResult, err := checksumSvc.FileChecksum(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return filepath_summary.NewFileSummary(filePath, fileInfo.ModTime(), checksumResult), nil
+}
+
+func TestDirSummary(t *testing.T) {
+	Convey("Test dir-summary of remote file system", t, func() {
+		testData, err := testing_utils.NewTestDataContainer("testdata/copy-files", 6)
+		So(err, ShouldBeNil)
+
+		copiedDetails, err := copyTestDataToTempDir(testData, "")
+		So(err, ShouldBeNil)
+		defer copiedDetails.Cleanup()
+
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
+		So(err, ShouldBeNil)
+		checksumSvc := checksums.New()
+
+		remoteOrigDir := copiedDetails.CopiedToTempDir
+		summary, err := sessionFileSystem.DirSummary(remoteOrigDir)
+		So(err, ShouldBeNil)
+		So(summary, ShouldNotBeNil)
+
+		So(summary.FlattenedFileSummaries, ShouldNotResemble, []*filepath_summary.FileSummary{})
+		So(len(summary.FlattenedFileSummaries), ShouldNotEqual, 0)
+
+		testData.ForeachRelativeFile(func(relPath string) {
+			var actualFileSummary *filepath_summary.FileSummary
+			for _, fileSummary := range summary.FlattenedFileSummaries {
+				summaryRelPath := strings.TrimLeft(fileSummary.FullPath[len(remoteOrigDir):], "\\/")
+				if summaryRelPath == relPath {
+					actualFileSummary = fileSummary
+					break
+				}
+			}
+			if actualFileSummary == nil {
+				So(fmt.Errorf("Did not find summary for file '%s'", relPath), ShouldBeNil)
+			}
+
+			fullRemoteFilePath := filepath.Join(copiedDetails.BaseTempDir, relPath)
+			expectedSummary, err := getFileSummaryForFile(checksumSvc, fullRemoteFilePath)
+			So(err, ShouldBeNil)
+
+			So(actualFileSummary.Checksum.HexString(), ShouldEqual, expectedSummary.Checksum.HexString())
+			So(actualFileSummary.ModTime.Equal(expectedSummary.ModTime), ShouldBeTrue)
+		})
+
+		So(len(summary.FlattenedFileSummaries), ShouldEqual, len(testData.RelativeFiles))
+	})
+}
+
+func TestFileSummary(t *testing.T) {
+	Convey("Test file-summary of remote file system", t, func() {
+		testData, err := testing_utils.NewTestDataContainer("testdata/copy-files", 6)
+		So(err, ShouldBeNil)
+
+		copiedDetails, err := copyTestDataToTempDir(testData, "")
+		So(err, ShouldBeNil)
+		defer copiedDetails.Cleanup()
+
+		sessionFileSystem, err := testingGetNewSessionFileSystem()
+		So(err, ShouldBeNil)
+		checksumSvc := checksums.New()
+
+		remoteOrigDir := copiedDetails.CopiedToTempDir
+		testData.ForeachRelativeFile(func(relPath string) {
+			actualFileSummary, err := sessionFileSystem.FileSummary(filepath.Join(remoteOrigDir, relPath))
+			So(err, ShouldBeNil)
+			So(actualFileSummary, ShouldNotBeNil)
+
+			fullRemoteFilePath := filepath.Join(copiedDetails.CopiedToTempDir, relPath)
+			expectedSummary, err := getFileSummaryForFile(checksumSvc, fullRemoteFilePath)
+			So(err, ShouldBeNil)
+
+			So(actualFileSummary.Checksum.HexString(), ShouldEqual, expectedSummary.Checksum.HexString())
+			So(actualFileSummary.ModTime.Equal(expectedSummary.ModTime), ShouldBeTrue)
 		})
 	})
 }

@@ -13,6 +13,8 @@ import (
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/tylerb/graceful.v1"
 
+	"github.com/golang-devops/go-psexec/services/encoding/checksums"
+	"github.com/golang-devops/go-psexec/services/filepath_summary"
 	"github.com/golang-devops/go-psexec/shared"
 )
 
@@ -80,7 +82,12 @@ func (a *app) Run(logger service.Logger) {
 	}
 	a.privateKey = pvtKey
 
-	a.h = &handler{logger, a.privateKey}
+	checksumsSvc := checksums.New()
+	handlerServices := &HandlerServices{
+		FilePathSummaries: filepath_summary.New(checksumsSvc),
+	}
+
+	a.h = &handler{logger, a.privateKey, handlerServices}
 
 	allowedKeys, err := shared.LoadAllowedPublicKeysFile(*allowedPublicKeysFileFlag)
 	if err != nil {
@@ -130,6 +137,7 @@ func (a *app) Run(logger service.Logger) {
 	r.Post("/delete", a.h.handleDeleteFunc)
 	r.Post("/move", a.h.handleMoveFunc)
 	r.Get("/stats", a.h.handleStatsFunc)
+	r.Get("/path-summary", a.h.handlePathSummaryFunc)
 	r.Get("/get-temp-dir", a.h.handleGetTempDirFunc)
 	r.Get("/get-os-type", a.h.handleGetOsTypeFunc)
 

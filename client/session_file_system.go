@@ -3,8 +3,11 @@ package client
 import (
 	"fmt"
 	"net/url"
+	"path/filepath"
 	"strings"
 
+	"github.com/golang-devops/go-psexec/services/encoding/checksums"
+	"github.com/golang-devops/go-psexec/services/filepath_summary"
 	"github.com/golang-devops/go-psexec/shared/dtos"
 	"github.com/golang-devops/go-psexec/shared/tar_io"
 )
@@ -15,6 +18,8 @@ type SessionFileSystem interface {
 	Delete(remotePath string) error
 	Move(oldRemotePath, newRemotePath string) error
 	Stats(remotePath string) (*dtos.StatsDto, error)
+	DirSummary(remotePath string) (*filepath_summary.DirSummary, error)
+	FileSummary(remotePath string) (*filepath_summary.FileSummary, error)
 }
 
 func NewSessionFileSystem(session *session) SessionFileSystem {
@@ -78,4 +83,51 @@ func (s *sessionFileSystem) Stats(remotePath string) (*dtos.StatsDto, error) {
 		return nil, err
 	}
 	return stats, nil
+}
+
+func (s *sessionFileSystem) getPathSummary(remotePath string) (*dtos.FilesystemSummaryDto, error) {
+	relUrl := "/auth/path-summary"
+	queryValues := make(url.Values)
+	queryValues.Set("path", remotePath)
+	dto := &dtos.FilesystemSummaryDto{}
+	if err := s.session.MakeGetRequest(relUrl, queryValues, dto); err != nil {
+		return nil, err
+	}
+	return dto, nil
+}
+
+func (s *sessionFileSystem) createFileSummaryFromDTO(baseDir string, dto *dtos.FileSummary) (*filepath_summary.FileSummary, error) {
+	checksum, err := checksums.NewChecksumResultFromHex(dto.ChecksumHex)
+	if err != nil {
+		return nil, err
+	}
+
+	return filepath_summary.NewFileSummary(filepath.Join(baseDir, dto.RelativePath), dto.ModTime, checksum), nil
+}
+
+func (s *sessionFileSystem) DirSummary(remotePath string) (*filepath_summary.DirSummary, error) {
+	dto, err := s.getPathSummary(remotePath)
+	if err != nil {
+		return nil, err
+	}
+
+	flattenedFileSummaries := []*filepath_summary.FileSummary{}
+	for _, f := range dto.FlattenedFiles {
+		fileSummary, err := s.createFileSummaryFromDTO(dto.BaseDir, f)
+		if err != nil {
+			return nil, err
+		}
+		flattenedFileSummaries = append(flattenedFileSummaries, fileSummary)
+	}
+
+	return &filepath_summary.DirSummary{FlattenedFileSummaries: flattenedFileSummaries}, nil
+}
+
+func (s *sessionFileSystem) FileSummary(remotePath string) (*filepath_summary.FileSummary, error) {
+	dto, err := s.getPathSummary(remotePath)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.createFileSummaryFromDTO(dto.BaseDir, dto.FlattenedFiles[0])
 }

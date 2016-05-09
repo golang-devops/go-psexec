@@ -13,6 +13,7 @@ import (
 type handler struct {
 	logger     service.Logger
 	privateKey *rsa.PrivateKey
+    svcs *HandlerServices
 }
 
 func (h *handler) deserializeBody(body io.Reader, dest interface{}) error {
