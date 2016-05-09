@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	TempVersion      = "0.0.8" //Until we integrate with travis
+	TempVersion      = "0.0.9" //Until we integrate with travis
 	CURRENT_USER_VAL = "use_current"
 )
 
