@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/francoishill/afero"
@@ -417,8 +416,7 @@ func TestDirSummary(t *testing.T) {
 		testData.ForeachRelativeFile(func(relPath string) {
 			var actualFileSummary *filepath_summary.FileSummary
 			for _, fileSummary := range summary.FlattenedFileSummaries {
-				summaryRelPath := strings.TrimLeft(fileSummary.FullPath[len(remoteOrigDir):], "\\/")
-				if summaryRelPath == relPath {
+				if fileSummary.RelativePath == relPath {
 					actualFileSummary = fileSummary
 					break
 				}

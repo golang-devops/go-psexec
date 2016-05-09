@@ -96,13 +96,13 @@ func (s *sessionFileSystem) getPathSummary(remotePath string) (*dtos.FilesystemS
 	return dto, nil
 }
 
-func (s *sessionFileSystem) createFileSummaryFromDTO(baseDir string, dto *dtos.FileSummary) (*filepath_summary.FileSummary, error) {
+func (s *sessionFileSystem) createFileSummaryFromDTO(dto *dtos.FileSummary) (*filepath_summary.FileSummary, error) {
 	checksum, err := checksums.NewChecksumResultFromHex(dto.ChecksumHex)
 	if err != nil {
 		return nil, err
 	}
 
-	return filepath_summary.NewFileSummary(filepath.Join(baseDir, dto.RelativePath), dto.ModTime, checksum), nil
+	return filepath_summary.NewFileSummary(dto.RelativePath, dto.ModTime, checksum), nil
 }
 
 func (s *sessionFileSystem) DirSummary(remotePath string) (*filepath_summary.DirSummary, error) {
@@ -113,14 +113,14 @@ func (s *sessionFileSystem) DirSummary(remotePath string) (*filepath_summary.Dir
 
 	flattenedFileSummaries := []*filepath_summary.FileSummary{}
 	for _, f := range dto.FlattenedFiles {
-		fileSummary, err := s.createFileSummaryFromDTO(dto.BaseDir, f)
+		fileSummary, err := s.createFileSummaryFromDTO(f)
 		if err != nil {
 			return nil, err
 		}
 		flattenedFileSummaries = append(flattenedFileSummaries, fileSummary)
 	}
 
-	return &filepath_summary.DirSummary{FlattenedFileSummaries: flattenedFileSummaries}, nil
+	return filepath_summary.NewDirSummary(dto.BaseDir, flattenedFileSummaries), nil
 }
 
 func (s *sessionFileSystem) FileSummary(remotePath string) (*filepath_summary.FileSummary, error) {
@@ -129,5 +129,11 @@ func (s *sessionFileSystem) FileSummary(remotePath string) (*filepath_summary.Fi
 		return nil, err
 	}
 
-	return s.createFileSummaryFromDTO(dto.BaseDir, dto.FlattenedFiles[0])
+	fileSummary := dto.FlattenedFiles[0]
+
+	//This is a hacky solution...
+	//TODO: Refer to other todo item with timestamp `2016-05-09 20:57` for details on this hack
+
+	fileSummary.RelativePath = filepath.Join(dto.BaseDir, fileSummary.RelativePath)
+	return s.createFileSummaryFromDTO(fileSummary)
 }

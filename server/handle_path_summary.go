@@ -40,23 +40,22 @@ func (h *handler) handlePathSummaryFunc(c *echo.Context) error {
 
 		baseDir = path
 		for _, f := range dirSummary.FlattenedFileSummaries {
-			relPath := strings.TrimLeft(f.FullPath[len(baseDir):], "\\/")
 			flattenedFiles = append(flattenedFiles, &dtos.FileSummary{
-				RelativePath: relPath,
+				RelativePath: f.RelativePath,
 				ModTime:      f.ModTime,
 				ChecksumHex:  f.Checksum.HexString(),
 			})
 		}
 	} else {
-		fileSummary, err := h.svcs.FilePathSummaries.GetFileSummary(path)
+		//TODO: 2016-05-09 20:57 - it is hacky to use an empty basedir and full path for single files. See other spot where we reference this timestamp in the TODO
+		baseDir = ""
+		fileSummary, err := h.svcs.FilePathSummaries.GetFileSummary(baseDir, path)
 		if err != nil {
 			return fmt.Errorf("Cannot get file '%s' summary, error: %s", path, err.Error())
 		}
 
-		baseDir = ""
-		relPath := fileSummary.FullPath //Use full path and keep base dir empty
 		flattenedFiles = append(flattenedFiles, &dtos.FileSummary{
-			RelativePath: relPath,
+			RelativePath: fileSummary.RelativePath,
 			ModTime:      fileSummary.ModTime,
 			ChecksumHex:  fileSummary.Checksum.HexString(),
 		})

@@ -9,28 +9,37 @@ import (
 
 //DirSummary holds the summary used for synchronizing across
 type DirSummary struct {
+	BaseDir                string
 	FlattenedFileSummaries []*FileSummary
+}
+
+//NewDirSummary will create a new instance of DirSummary
+func NewDirSummary(baseDir string, flattenedFileSummaries []*FileSummary) *DirSummary {
+	return &DirSummary{
+		BaseDir:                baseDir,
+		FlattenedFileSummaries: flattenedFileSummaries,
+	}
 }
 
 //FileSummary holds the info for a single file
 type FileSummary struct {
-	FullPath string
-	ModTime  time.Time
-	Checksum *checksums.ChecksumResult
+	RelativePath string
+	ModTime      time.Time
+	Checksum     *checksums.ChecksumResult
 }
 
 //HaveSamePath compares it to the path of another
 func (f *FileSummary) HaveSamePath(other *FileSummary) bool {
-	thisCleaned := strings.TrimSpace(f.FullPath)
-	otherCleaned := strings.TrimSpace(other.FullPath)
+	thisCleaned := strings.TrimSpace(f.RelativePath)
+	otherCleaned := strings.TrimSpace(other.RelativePath)
 	return strings.EqualFold(thisCleaned, otherCleaned)
 }
 
 //NewFileSummary will create a new instance of FileSummary
-func NewFileSummary(fullPath string, modTime time.Time, checksum *checksums.ChecksumResult) *FileSummary {
+func NewFileSummary(relativePath string, modTime time.Time, checksum *checksums.ChecksumResult) *FileSummary {
 	return &FileSummary{
-		FullPath: fullPath,
-		ModTime:  modTime,
-		Checksum: checksum,
+		RelativePath: relativePath,
+		ModTime:      modTime,
+		Checksum:     checksum,
 	}
 }

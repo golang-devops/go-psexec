@@ -11,7 +11,7 @@ import (
 
 //Service is the filepath summary service
 type Service interface {
-	GetFileSummary(filePath string) (*FileSummary, error)
+	GetFileSummary(dirPath, relPath string) (*FileSummary, error)
 	GetDirSummary(dirPath string) (*DirSummary, error)
 }
 
@@ -26,18 +26,19 @@ type service struct {
 	checksumsSvc checksums.Service
 }
 
-func (s *service) GetFileSummary(filePath string) (*FileSummary, error) {
-	checksumResult, err := s.checksumsSvc.FileChecksum(filePath)
+func (s *service) GetFileSummary(dirPath, relFilePath string) (*FileSummary, error) {
+	fullPath := filepath.Join(dirPath, relFilePath)
+	checksumResult, err := s.checksumsSvc.FileChecksum(fullPath)
 	if err != nil {
 		return nil, err
 	}
 
-	fileStats, err := os.Stat(filePath)
+	fileStats, err := os.Stat(fullPath)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot Stat file path '%s', error: %s", filePath, err.Error())
+		return nil, fmt.Errorf("Cannot Stat file path '%s', error: %s", fullPath, err.Error())
 	}
 
-	return NewFileSummary(filePath, fileStats.ModTime(), checksumResult), nil
+	return NewFileSummary(relFilePath, fileStats.ModTime(), checksumResult), nil
 }
 
 func (s *service) GetDirSummary(dirPath string) (*DirSummary, error) {
@@ -59,7 +60,7 @@ func (s *service) GetDirSummary(dirPath string) (*DirSummary, error) {
 			return nil
 		}
 
-		fileSummary, err := s.GetFileSummary(path)
+		fileSummary, err := s.GetFileSummary(dirPath, relPath)
 		if err != nil {
 			return err
 		}
@@ -71,5 +72,6 @@ func (s *service) GetDirSummary(dirPath string) (*DirSummary, error) {
 		return nil, fmt.Errorf("Cannot walk dir '%s' to get summaries, error: %s", dirPath, walkErr.Error())
 	}
 
-	return &DirSummary{FlattenedFileSummaries: flattenedFileSummaries}, nil
+	baseDir := dirPath
+	return NewDirSummary(baseDir, flattenedFileSummaries), nil
 }
