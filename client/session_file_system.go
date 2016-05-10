@@ -17,6 +17,7 @@ type SessionFileSystem interface {
 	UploadTar(tarProvider tar_io.TarProvider, remotePath string, isDir bool) error
 	Delete(remotePath string) error
 	Move(oldRemotePath, newRemotePath string) error
+	Copy(srcRemotePath, destRemotePath string) error
 	Stats(remotePath string) (*dtos.StatsDto, error)
 	DirSummary(remotePath string) (*filepath_summary.DirSummary, error)
 	FileSummary(remotePath string) (*filepath_summary.FileSummary, error)
@@ -71,6 +72,12 @@ func (s *sessionFileSystem) Delete(remotePath string) error {
 func (s *sessionFileSystem) Move(oldRemotePath, newRemotePath string) error {
 	relUrl := "/auth/move"
 	dto := &dtos.FsMoveDto{OldRemotePath: oldRemotePath, NewRemotePath: newRemotePath}
+	return s.session.DoEncryptedJsonRequest(relUrl, dto, nil)
+}
+
+func (s *sessionFileSystem) Copy(srcRemotePath, destRemotePath string) error {
+	relUrl := "/auth/copy"
+	dto := &dtos.FsCopyDto{SrcRemotePath: srcRemotePath, DestRemotePath: destRemotePath}
 	return s.session.DoEncryptedJsonRequest(relUrl, dto, nil)
 }
 

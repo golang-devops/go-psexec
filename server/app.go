@@ -136,6 +136,7 @@ func (a *app) Run(logger service.Logger) {
 	r.Get("/download-tar", a.h.handleDownloadTarFunc)
 	r.Post("/delete", a.h.handleDeleteFunc)
 	r.Post("/move", a.h.handleMoveFunc)
+	r.Post("/copy", a.h.handleCopyFunc)
 	r.Get("/stats", a.h.handleStatsFunc)
 	r.Get("/path-summary", a.h.handlePathSummaryFunc)
 	r.Get("/get-temp-dir", a.h.handleGetTempDirFunc)

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 
@@ -20,7 +19,7 @@ func (h *handler) handleStatsFunc(c *echo.Context) error {
 	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return c.JSON(http.StatusNotFound, &dtos.StatsDto{
+			return c.JSON(200, &dtos.StatsDto{
 				Path:   path,
 				Exists: false,
 			})
