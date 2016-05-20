@@ -1,102 +1,147 @@
 package echo
 
-// Group is a set of subroutes for a specified route. It can be used for inner
-// routes that share a common middlware or functionality that should be separate
-// from the parent echo instance while still inheriting from it.
-type Group struct {
-	echo Echo
-}
-
-// Use implements the echo.Use interface for subroutes within the Group.
-func (g *Group) Use(m ...Middleware) {
-	for _, h := range m {
-		g.echo.middleware = append(g.echo.middleware, wrapMiddleware(h))
+type (
+	// Group is a set of sub-routes for a specified route. It can be used for inner
+	// routes that share a common middlware or functionality that should be separate
+	// from the parent echo instance while still inheriting from it.
+	Group struct {
+		prefix     string
+		middleware []MiddlewareFunc
+		echo       *Echo
 	}
+)
+
+// Use implements `Echo#Use()` for sub-routes within the Group.
+func (g *Group) Use(m ...MiddlewareFunc) {
+	g.middleware = append(g.middleware, m...)
+	// Allow all requests to reach the group as they might get dropped if router
+	// doesn't find a match, making none of the group middleware process.
+	g.echo.Any(g.prefix+"*", func(c Context) error {
+		return ErrNotFound
+	}, g.middleware...)
 }
 
-// Connect implements the echo.Connect interface for subroutes within the Group.
-func (g *Group) Connect(path string, h Handler) {
-	g.echo.Connect(path, h)
+// CONNECT implements `Echo#CONNECT()` for sub-routes within the Group.
+func (g *Group) CONNECT(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(CONNECT, path, h, m...)
 }
 
-// Delete implements the echo.Delete interface for subroutes within the Group.
-func (g *Group) Delete(path string, h Handler) {
-	g.echo.Delete(path, h)
+// Connect is deprecated, use `CONNECT()` instead.
+func (g *Group) Connect(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(CONNECT, path, h, m...)
 }
 
-// Get implements the echo.Get interface for subroutes within the Group.
-func (g *Group) Get(path string, h Handler) {
-	g.echo.Get(path, h)
+// DELETE implements `Echo#DELETE()` for sub-routes within the Group.
+func (g *Group) DELETE(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(DELETE, path, h, m...)
 }
 
-// Head implements the echo.Head interface for subroutes within the Group.
-func (g *Group) Head(path string, h Handler) {
-	g.echo.Head(path, h)
+// Delete is deprecated, use `DELETE()` instead.
+func (g *Group) Delete(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(DELETE, path, h, m...)
 }
 
-// Options implements the echo.Options interface for subroutes within the Group.
-func (g *Group) Options(path string, h Handler) {
-	g.echo.Options(path, h)
+// GET implements `Echo#GET()` for sub-routes within the Group.
+func (g *Group) GET(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(GET, path, h, m...)
 }
 
-// Patch implements the echo.Patch interface for subroutes within the Group.
-func (g *Group) Patch(path string, h Handler) {
-	g.echo.Patch(path, h)
+// Get is deprecated, use `GET()` instead.
+func (g *Group) Get(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(GET, path, h, m...)
 }
 
-// Post implements the echo.Post interface for subroutes within the Group.
-func (g *Group) Post(path string, h Handler) {
-	g.echo.Post(path, h)
+// HEAD implements `Echo#HEAD()` for sub-routes within the Group.
+func (g *Group) HEAD(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(HEAD, path, h, m...)
 }
 
-// Put implements the echo.Put interface for subroutes within the Group.
-func (g *Group) Put(path string, h Handler) {
-	g.echo.Put(path, h)
+// Head is deprecated, use `HEAD()` instead.
+func (g *Group) Head(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(HEAD, path, h, m...)
 }
 
-// Trace implements the echo.Trace interface for subroutes within the Group.
-func (g *Group) Trace(path string, h Handler) {
-	g.echo.Trace(path, h)
+// OPTIONS implements `Echo#OPTIONS()` for sub-routes within the Group.
+func (g *Group) OPTIONS(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(OPTIONS, path, h, m...)
 }
 
-// Any implements the echo.Any interface for subroutes within the Group.
-func (g *Group) Any(path string, h Handler) {
+// Options is deprecated, use `OPTIONS()` instead.
+func (g *Group) Options(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(OPTIONS, path, h, m...)
+}
+
+// PATCH implements `Echo#PATCH()` for sub-routes within the Group.
+func (g *Group) PATCH(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(PATCH, path, h, m...)
+}
+
+// Patch is deprecated, use `PATCH()` instead.
+func (g *Group) Patch(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(PATCH, path, h, m...)
+}
+
+// POST implements `Echo#POST()` for sub-routes within the Group.
+func (g *Group) POST(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(POST, path, h, m...)
+}
+
+// Post is deprecated, use `POST()` instead.
+func (g *Group) Post(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(POST, path, h, m...)
+}
+
+// PUT implements `Echo#PUT()` for sub-routes within the Group.
+func (g *Group) PUT(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(PUT, path, h, m...)
+}
+
+// Put is deprecated, use `PUT()` instead.
+func (g *Group) Put(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(PUT, path, h, m...)
+}
+
+// TRACE implements `Echo#TRACE()` for sub-routes within the Group.
+func (g *Group) TRACE(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(TRACE, path, h, m...)
+}
+
+// Trace is deprecated, use `TRACE()` instead.
+func (g *Group) Trace(path string, h HandlerFunc, m ...MiddlewareFunc) {
+	g.add(TRACE, path, h, m...)
+}
+
+// Any implements `Echo#Any()` for sub-routes within the Group.
+func (g *Group) Any(path string, handler HandlerFunc, middleware ...MiddlewareFunc) {
 	for _, m := range methods {
-		g.echo.add(m, path, h)
+		g.add(m, path, handler, middleware...)
 	}
 }
 
-// Match implements the echo.Match interface for subroutes within the Group.
-func (g *Group) Match(methods []string, path string, h Handler) {
+// Match implements `Echo#Match()` for sub-routes within the Group.
+func (g *Group) Match(methods []string, path string, handler HandlerFunc, middleware ...MiddlewareFunc) {
 	for _, m := range methods {
-		g.echo.add(m, path, h)
+		g.add(m, path, handler, middleware...)
 	}
 }
 
-// WebSocket implements the echo.WebSocket interface for subroutes within the
-// Group.
-func (g *Group) WebSocket(path string, h HandlerFunc) {
-	g.echo.WebSocket(path, h)
+// Group creates a new sub-group with prefix and optional sub-group-level middleware.
+func (g *Group) Group(prefix string, m ...MiddlewareFunc) *Group {
+	m = append(g.middleware, m...)
+	return g.echo.Group(g.prefix+prefix, m...)
 }
 
-// Static implements the echo.Static interface for subroutes within the Group.
-func (g *Group) Static(path, root string) {
-	g.echo.Static(path, root)
+// Static implements `Echo#Static()` for sub-routes within the Group.
+func (g *Group) Static(prefix, root string) {
+	g.echo.Static(g.prefix+prefix, root)
 }
 
-// ServeDir implements the echo.ServeDir interface for subroutes within the
-// Group.
-func (g *Group) ServeDir(path, root string) {
-	g.echo.ServeDir(path, root)
+// File implements `Echo#File()` for sub-routes within the Group.
+func (g *Group) File(path, file string) {
+	g.echo.File(g.prefix+path, file)
 }
 
-// ServeFile implements the echo.ServeFile interface for subroutes within the
-// Group.
-func (g *Group) ServeFile(path, file string) {
-	g.echo.ServeFile(path, file)
-}
-
-// Group implements the echo.Group interface for subroutes within the Group.
-func (g *Group) Group(prefix string, m ...Middleware) *Group {
-	return g.echo.Group(prefix, m...)
+func (g *Group) add(method, path string, handler HandlerFunc, middleware ...MiddlewareFunc) {
+	middleware = append(g.middleware, middleware...)
+	g.echo.add(method, g.prefix+path, handler, middleware...)
 }

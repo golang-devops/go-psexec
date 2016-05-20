@@ -13,7 +13,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleStreamFunc(c *echo.Context) error {
+func (h *handler) handleStreamFunc(c echo.Context) error {
 	req := c.Request()
 	resp := c.Response()
 
@@ -45,7 +45,9 @@ func (h *handler) handleStreamFunc(c *echo.Context) error {
 	onStarted := func(startedDetails *execstreamer.StartedDetails) {
 		resp.Header().Set(shared.PROCESS_ID_HTTP_HEADER_NAME, fmt.Sprintf("%d", startedDetails.Pid))
 		resp.WriteHeader(http.StatusOK)
-		resp.Flush()
+		if flusher, ok := resp.(http.Flusher); ok {
+			flusher.Flush()
+		}
 	}
 
 	streamer, err := execstreamer.NewExecStreamerBuilder().
@@ -71,9 +73,15 @@ func (h *handler) handleStreamFunc(c *echo.Context) error {
 		return err
 	}
 
-	resp.Flush()
+	if flusher, ok := resp.(http.Flusher); ok {
+		flusher.Flush()
+	}
+
 	resp.Write([]byte(shared.RESPONSE_EOF))
-	resp.Flush()
+
+	if flusher, ok := resp.(http.Flusher); ok {
+		flusher.Flush()
+	}
 
 	return nil
 }

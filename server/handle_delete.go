@@ -10,7 +10,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleDeleteFunc(c *echo.Context) error {
+func (h *handler) handleDeleteFunc(c echo.Context) error {
 	dto := &dtos.FsDeleteDto{}
 	err := h.getDto(c, dto)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleStartFunc(c *echo.Context) error {
+func (h *handler) handleStartFunc(c echo.Context) error {
 	req := c.Request()
 	resp := c.Response()
 

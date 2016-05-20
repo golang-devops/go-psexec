@@ -10,8 +10,8 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handlePathSummaryFunc(c *echo.Context) error {
-	path := c.Query("path")
+func (h *handler) handlePathSummaryFunc(c echo.Context) error {
+	path := c.QueryParam("path")
 	if strings.TrimSpace(path) == "" {
 		return fmt.Errorf("Request does not contain query 'path' value")
 	}

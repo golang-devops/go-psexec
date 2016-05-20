@@ -25,7 +25,7 @@ func (h *handler) getPublicKeyBytes() ([]byte, error) {
 	return x509.MarshalPKIXPublicKey(&h.privateKey.PublicKey)
 }
 
-func (h *handler) getAuthenticatedSessionToken(c *echo.Context) (*sessionToken, error) {
+func (h *handler) getAuthenticatedSessionToken(c echo.Context) (*sessionToken, error) {
 	sessionIdInterface := c.Get("session-id")
 	sessionId, ok := sessionIdInterface.(int)
 	if !ok {

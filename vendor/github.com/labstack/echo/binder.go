@@ -13,94 +13,55 @@ import (
 type (
 	// Binder is the interface that wraps the Bind method.
 	Binder interface {
-		Bind(*http.Request, interface{}) error
+		Bind(interface{}, Context) error
 	}
 
-	binder struct {
-		maxMemory int64
-	}
+	binder struct{}
 )
 
-const (
-	defaultMaxMemory = 32 << 20 // 32 MB
-)
-
-// SetMaxBodySize sets multipart forms max body size
-func (b *binder) SetMaxMemory(size int64) {
-	b.maxMemory = size
-}
-
-// MaxBodySize return multipart forms max body size
-func (b *binder) MaxMemory() int64 {
-	return b.maxMemory
-}
-
-func (b *binder) Bind(r *http.Request, i interface{}) (err error) {
-	if r.Body == nil {
-		err = NewHTTPError(http.StatusBadRequest, "Request body can't be nil")
+func (b *binder) Bind(i interface{}, c Context) (err error) {
+	req := c.Request()
+	ctype := req.Header().Get(HeaderContentType)
+	if req.Body() == nil {
+		err = NewHTTPError(http.StatusBadRequest, "request body can't be empty")
 		return
 	}
-	defer r.Body.Close()
-	ct := r.Header.Get(ContentType)
 	err = ErrUnsupportedMediaType
 	switch {
-	case strings.HasPrefix(ct, ApplicationJSON):
-		if err = json.NewDecoder(r.Body).Decode(i); err != nil {
+	case strings.HasPrefix(ctype, MIMEApplicationJSON):
+		if err = json.NewDecoder(req.Body()).Decode(i); err != nil {
 			err = NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-	case strings.HasPrefix(ct, ApplicationXML):
-		if err = xml.NewDecoder(r.Body).Decode(i); err != nil {
+	case strings.HasPrefix(ctype, MIMEApplicationXML):
+		if err = xml.NewDecoder(req.Body()).Decode(i); err != nil {
 			err = NewHTTPError(http.StatusBadRequest, err.Error())
 		}
-	case strings.HasPrefix(ct, ApplicationForm):
-		if err = b.bindForm(r, i); err != nil {
-			err = NewHTTPError(http.StatusBadRequest, err.Error())
-		}
-	case strings.HasPrefix(ct, MultipartForm):
-		if err = b.bindMultiPartForm(r, i); err != nil {
+	case strings.HasPrefix(ctype, MIMEApplicationForm), strings.HasPrefix(ctype, MIMEMultipartForm):
+		if err = b.bindForm(i, req.FormParams()); err != nil {
 			err = NewHTTPError(http.StatusBadRequest, err.Error())
 		}
 	}
 	return
 }
 
-func (binder) bindForm(r *http.Request, i interface{}) error {
-	if err := r.ParseForm(); err != nil {
-		return err
-	}
-	return mapForm(i, r.Form)
-}
-
-func (b binder) bindMultiPartForm(r *http.Request, i interface{}) error {
-	if b.maxMemory == 0 {
-		b.maxMemory = defaultMaxMemory
-	}
-	if err := r.ParseMultipartForm(b.maxMemory); err != nil {
-		return err
-	}
-	return mapForm(i, r.Form)
-}
-
-func mapForm(ptr interface{}, form map[string][]string) error {
+func (b *binder) bindForm(ptr interface{}, form map[string][]string) error {
 	typ := reflect.TypeOf(ptr).Elem()
 	val := reflect.ValueOf(ptr).Elem()
+
 	for i := 0; i < typ.NumField(); i++ {
 		typeField := typ.Field(i)
 		structField := val.Field(i)
 		if !structField.CanSet() {
 			continue
 		}
-
 		structFieldKind := structField.Kind()
 		inputFieldName := typeField.Tag.Get("form")
+
 		if inputFieldName == "" {
 			inputFieldName = typeField.Name
-
-			// if "form" tag is nil, we inspect if the field is a struct.
-			// this would not make sense for JSON parsing but it does for a form
-			// since data is flatten
+			// If "form" tag is nil, we inspect if the field is a struct.
 			if structFieldKind == reflect.Struct {
-				err := mapForm(structField.Addr().Interface(), form)
+				err := b.bindForm(structField.Addr().Interface(), form)
 				if err != nil {
 					return err
 				}
@@ -162,49 +123,49 @@ func setWithProperType(valueKind reflect.Kind, val string, structField reflect.V
 	case reflect.String:
 		structField.SetString(val)
 	default:
-		return errors.New("Unknown type")
+		return errors.New("unknown type")
 	}
 	return nil
 }
 
-func setIntField(val string, bitSize int, field reflect.Value) error {
-	if val == "" {
-		val = "0"
+func setIntField(value string, bitSize int, field reflect.Value) error {
+	if value == "" {
+		value = "0"
 	}
-	intVal, err := strconv.ParseInt(val, 10, bitSize)
+	intVal, err := strconv.ParseInt(value, 10, bitSize)
 	if err == nil {
 		field.SetInt(intVal)
 	}
 	return err
 }
 
-func setUintField(val string, bitSize int, field reflect.Value) error {
-	if val == "" {
-		val = "0"
+func setUintField(value string, bitSize int, field reflect.Value) error {
+	if value == "" {
+		value = "0"
 	}
-	uintVal, err := strconv.ParseUint(val, 10, bitSize)
+	uintVal, err := strconv.ParseUint(value, 10, bitSize)
 	if err == nil {
 		field.SetUint(uintVal)
 	}
 	return err
 }
 
-func setBoolField(val string, field reflect.Value) error {
-	if val == "" {
-		val = "false"
+func setBoolField(value string, field reflect.Value) error {
+	if value == "" {
+		value = "false"
 	}
-	boolVal, err := strconv.ParseBool(val)
+	boolVal, err := strconv.ParseBool(value)
 	if err == nil {
 		field.SetBool(boolVal)
 	}
 	return err
 }
 
-func setFloatField(val string, bitSize int, field reflect.Value) error {
-	if val == "" {
-		val = "0.0"
+func setFloatField(value string, bitSize int, field reflect.Value) error {
+	if value == "" {
+		value = "0.0"
 	}
-	floatVal, err := strconv.ParseFloat(val, bitSize)
+	floatVal, err := strconv.ParseFloat(value, bitSize)
 	if err == nil {
 		field.SetFloat(floatVal)
 	}

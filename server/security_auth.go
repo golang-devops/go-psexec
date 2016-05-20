@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/labstack/echo"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/labstack/echo"
 )
 
 func getSessionIdFromBearerToken(token string) (int, error) {
@@ -22,23 +23,25 @@ func getSessionIdFromBearerToken(token string) (int, error) {
 	return int(i), nil
 }
 
-func GetClientPubkey() echo.HandlerFunc {
-	return func(c *echo.Context) error {
-		auth := c.Request().Header.Get("Authorization")
+func GetClientPubkey() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			auth := c.Request().Header().Get("Authorization")
 
-		prefixLength := len("Bearer")
+			prefixLength := len("Bearer")
 
-		if len(auth) <= len("Bearer")+1 || auth[:prefixLength] != "Bearer" {
-			return echo.NewHTTPError(http.StatusUnauthorized)
+			if len(auth) <= len("Bearer")+1 || auth[:prefixLength] != "Bearer" {
+				return echo.NewHTTPError(http.StatusUnauthorized)
+			}
+
+			token := auth[prefixLength+1:]
+			sessionId, err := getSessionIdFromBearerToken(token)
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized)
+			}
+
+			c.Set("session-id", sessionId)
+			return next(c)
 		}
-
-		token := auth[prefixLength+1:]
-		sessionId, err := getSessionIdFromBearerToken(token)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusUnauthorized)
-		}
-
-		c.Set("session-id", sessionId)
-		return nil
 	}
 }

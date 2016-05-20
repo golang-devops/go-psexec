@@ -3,7 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
-	"net/http"
+
+	"github.com/labstack/echo/engine"
 )
 
 func getErrorStringFromRecovery(r interface{}) string {
@@ -18,11 +19,11 @@ func getErrorStringFromRecovery(r interface{}) string {
 	return errStr
 }
 
-func getIPFromRequest(r *http.Request) string {
-	if ipProxy := r.Header.Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
+func getIPFromRequest(r engine.Request) string {
+	if ipProxy := r.Header().Get("X-FORWARDED-FOR"); len(ipProxy) > 0 {
 		return ipProxy
 	}
-	ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+	ip, _, _ := net.SplitHostPort(r.RemoteAddress())
 	return ip
 }
 

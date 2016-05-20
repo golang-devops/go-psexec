@@ -8,7 +8,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) getDto(c *echo.Context, jsonDest interface{}) error {
+func (h *handler) getDto(c echo.Context, jsonDest interface{}) error {
 	req := c.Request()
 
 	sessionToken, err := h.getAuthenticatedSessionToken(c)
@@ -17,7 +17,7 @@ func (h *handler) getDto(c *echo.Context, jsonDest interface{}) error {
 	}
 
 	encryptedJsonContainer := &dtos.EncryptedJsonContainer{}
-	err = h.deserializeBody(req.Body, encryptedJsonContainer)
+	err = h.deserializeBody(req.Body(), encryptedJsonContainer)
 	if err != nil {
 		return err
 	}

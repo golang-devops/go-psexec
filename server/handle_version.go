@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo"
 )
 
-func (h *handler) handleVersionFunc(c *echo.Context) error {
+func (h *handler) handleVersionFunc(c echo.Context) error {
 	dto := &dtos.VersionDto{Version: TempVersion}
 	return c.JSON(200, dto)
 }

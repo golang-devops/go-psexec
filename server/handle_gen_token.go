@@ -5,16 +5,17 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
-	"github.com/labstack/echo"
 	"net/http"
+
+	"github.com/labstack/echo"
 
 	"github.com/golang-devops/go-psexec/shared"
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleGenerateTokenFunc(c *echo.Context) error {
+func (h *handler) handleGenerateTokenFunc(c echo.Context) error {
 	dto := &dtos.GetTokenRequestDto{}
-	err := h.deserializeBody(c.Request().Body, dto)
+	err := h.deserializeBody(c.Request().Body(), dto)
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/termie/go-shutil"
 )
 
-func (h *handler) handleCopyFunc(c *echo.Context) error {
+func (h *handler) handleCopyFunc(c echo.Context) error {
 	dto := &dtos.FsCopyDto{}
 	err := h.getDto(c, dto)
 	if err != nil {

@@ -11,9 +11,9 @@ import (
 	"github.com/golang-devops/go-psexec/shared/tar_io"
 )
 
-func (h *handler) handleDownloadTarFunc(c *echo.Context) error {
-	pathToSend := c.Query("path")
-	fileFilter := c.Query("file-filter")
+func (h *handler) handleDownloadTarFunc(c echo.Context) error {
+	pathToSend := c.QueryParam("path")
+	fileFilter := c.QueryParam("file-filter")
 	if strings.TrimSpace(pathToSend) == "" {
 		return fmt.Errorf("Request does not contain query 'path' value")
 	}

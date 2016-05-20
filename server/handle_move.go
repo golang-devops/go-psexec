@@ -10,7 +10,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleMoveFunc(c *echo.Context) error {
+func (h *handler) handleMoveFunc(c echo.Context) error {
 	dto := &dtos.FsMoveDto{}
 	err := h.getDto(c, dto)
 	if err != nil {

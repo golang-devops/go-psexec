@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,9 +14,15 @@ import (
 	"gopkg.in/fsnotify.v1"
 	"gopkg.in/tylerb/graceful.v1"
 
+	"os/user"
+
+	apex "github.com/apex/log"
+	"github.com/apex/log/handlers/json"
 	"github.com/golang-devops/go-psexec/services/encoding/checksums"
 	"github.com/golang-devops/go-psexec/services/filepath_summary"
 	"github.com/golang-devops/go-psexec/shared"
+	"github.com/labstack/echo/engine/standard"
+	"github.com/natefinch/lumberjack"
 )
 
 type app struct {
@@ -64,7 +71,30 @@ func (a *app) registerInterruptSignal() {
 }
 
 func (a *app) Run(logger service.Logger) {
-	a.logger = logger
+	var logFilePath string
+	usr, err := user.Current()
+	if err == nil {
+		logFilePath = filepath.Join(usr.HomeDir, ".config/go-psexec/server-hidden.log")
+	} else {
+		logFilePath = "server-hidden.log"
+	}
+
+	rollingFile := &lumberjack.Logger{
+		Filename:   logFilePath,
+		MaxSize:    20, // megabytes
+		MaxBackups: 20,
+		MaxAge:     28, //days
+	}
+
+	apex.SetLevel(apex.DebugLevel) //Global level
+	apex.SetHandler(json.New(rollingFile))
+
+	tmpLogger := &defaultLogger{
+		logger,
+		apex.WithField("exe", filepath.Base(os.Args[0])),
+	}
+	a.logger = tmpLogger
+
 	defer func() {
 		if r := recover(); r != nil {
 			a.logger.Errorf("Panic recovery in service RUN function: %T %+v", r, r)
@@ -115,38 +145,47 @@ func (a *app) Run(logger service.Logger) {
 
 	e.Use(middleware.Recover())
 	if a.accessLogger {
-		e.Use(middleware.Logger())
+		loggerCfg := middleware.DefaultLoggerConfig
+		loggerCfg.Output = tmpLogger
+		e.Use(middleware.LoggerWithConfig(loggerCfg))
 	}
 
 	t := &htmlTemplateRenderer{}
 	e.SetRenderer(t)
 
 	// Unrestricted group
-	e.Post("/token", a.h.handleGenerateTokenFunc)
-	e.Get("/webui", a.h.handleWebUIFunc)
+	e.POST("/token", a.h.handleGenerateTokenFunc)
+	e.GET("/webui", a.h.handleWebUIFunc)
 
 	// Restricted group
 	r := e.Group("/auth")
 	r.Use(GetClientPubkey())
-	r.Get("/ping", a.h.handlePingFunc)
-	r.Get("/version", a.h.handleVersionFunc)
-	r.Post("/stream", a.h.handleStreamFunc)
-	r.Post("/start", a.h.handleStartFunc)
-	r.Post("/upload-tar", a.h.handleUploadTarFunc)
-	r.Get("/download-tar", a.h.handleDownloadTarFunc)
-	r.Post("/delete", a.h.handleDeleteFunc)
-	r.Post("/move", a.h.handleMoveFunc)
-	r.Post("/copy", a.h.handleCopyFunc)
-	r.Get("/stats", a.h.handleStatsFunc)
-	r.Get("/path-summary", a.h.handlePathSummaryFunc)
-	r.Get("/get-temp-dir", a.h.handleGetTempDirFunc)
-	r.Get("/get-os-type", a.h.handleGetOsTypeFunc)
+	r.GET("/ping", a.h.handlePingFunc)
+	r.GET("/version", a.h.handleVersionFunc)
+	r.POST("/stream", a.h.handleStreamFunc)
+	r.POST("/start", a.h.handleStartFunc)
+	r.POST("/upload-tar", a.h.handleUploadTarFunc)
+	r.GET("/download-tar", a.h.handleDownloadTarFunc)
+	r.POST("/delete", a.h.handleDeleteFunc)
+	r.POST("/move", a.h.handleMoveFunc)
+	r.POST("/copy", a.h.handleCopyFunc)
+	r.GET("/stats", a.h.handleStatsFunc)
+	r.GET("/path-summary", a.h.handlePathSummaryFunc)
+	r.GET("/get-temp-dir", a.h.handleGetTempDirFunc)
+	r.GET("/get-os-type", a.h.handleGetOsTypeFunc)
 
 	a.logger.Infof("Now serving on '%s'", *addressFlag)
 
+	server := standard.New(*addressFlag)
+	server.SetHandler(e)
+	server.SetLogger(e.Logger())
+	if e.Debug() {
+		e.Logger().Debug("running in debug mode")
+	}
+
 	a.srv = &graceful.Server{
 		Timeout: a.gracefulTimeout,
-		Server:  e.Server(*addressFlag),
+		Server:  server.Server,
 	}
 
 	a.registerInterruptSignal()

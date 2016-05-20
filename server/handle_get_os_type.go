@@ -10,7 +10,7 @@ import (
 	"github.com/golang-devops/go-psexec/shared/dtos"
 )
 
-func (h *handler) handleGetOsTypeFunc(c *echo.Context) error {
+func (h *handler) handleGetOsTypeFunc(c echo.Context) error {
 	runtimeOsType, err := osvisitors.GetRuntimeOsType()
 	if err != nil {
 		return fmt.Errorf("Unable to get runtime OsType, error: %s", err.Error())

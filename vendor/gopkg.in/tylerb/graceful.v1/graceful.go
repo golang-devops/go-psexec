@@ -40,6 +40,10 @@ type Server struct {
 	// must not be set directly.
 	ConnState func(net.Conn, http.ConnState)
 
+	// BeforeShutdown is an optional callback function that is called
+	// before the listener is closed.
+	BeforeShutdown func()
+
 	// ShutdownInitiated is an optional callback function that is called
 	// when shutdown is initiated. It can be used to notify the client
 	// side of long lived connections (e.g. websockets) to reconnect.
@@ -84,6 +88,7 @@ func Run(addr string, timeout time.Duration, n http.Handler) {
 			logger.Fatal(err)
 		}
 	}
+
 }
 
 // ListenAndServe is equivalent to http.Server.ListenAndServe with graceful shutdown enabled.
@@ -107,9 +112,6 @@ func (srv *Server) ListenAndServe() error {
 		return err
 	}
 
-	if srv.ListenLimit != 0 {
-		l = netutil.LimitListener(l, srv.ListenLimit)
-	}
 	return srv.Serve(l)
 }
 
@@ -162,6 +164,7 @@ func (srv *Server) ListenAndServeTLS(certFile, keyFile string) error {
 	if err != nil {
 		return err
 	}
+
 	return srv.Serve(l)
 }
 
@@ -193,6 +196,11 @@ func Serve(server *http.Server, l net.Listener, timeout time.Duration) error {
 
 // Serve is equivalent to http.Server.Serve with graceful shutdown enabled.
 func (srv *Server) Serve(listener net.Listener) error {
+
+	if srv.ListenLimit != 0 {
+		listener = netutil.LimitListener(listener, srv.ListenLimit)
+	}
+
 	// Track connection state
 	add := make(chan net.Conn)
 	remove := make(chan net.Conn)
@@ -296,6 +304,10 @@ func (srv *Server) interruptChan() chan os.Signal {
 
 func (srv *Server) handleInterrupt(interrupt chan os.Signal, listener net.Listener) {
 	<-interrupt
+
+	if srv.BeforeShutdown != nil {
+		srv.BeforeShutdown()
+	}
 
 	srv.SetKeepAlivesEnabled(false)
 	_ = listener.Close() // we are shutting down anyway. ignore error.
