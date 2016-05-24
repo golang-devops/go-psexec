@@ -169,6 +169,7 @@ func (a *app) Run(logger service.Logger) {
 	r.POST("/delete", a.h.handleDeleteFunc)
 	r.POST("/move", a.h.handleMoveFunc)
 	r.POST("/copy", a.h.handleCopyFunc)
+	r.POST("/symlink", a.h.handleSymlinkFunc)
 	r.GET("/stats", a.h.handleStatsFunc)
 	r.GET("/path-summary", a.h.handlePathSummaryFunc)
 	r.GET("/get-temp-dir", a.h.handleGetTempDirFunc)

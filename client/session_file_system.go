@@ -18,6 +18,7 @@ type SessionFileSystem interface {
 	Delete(remotePath string) error
 	Move(oldRemotePath, newRemotePath string) error
 	Copy(srcRemotePath, destRemotePath string) error
+	Symlink(srcRemotePath, destRemoteSymlinkPath string) error
 	Stats(remotePath string) (*dtos.StatsDto, error)
 	DirSummary(remotePath string) (*filepath_summary.DirSummary, error)
 	FileSummary(remotePath string) (*filepath_summary.FileSummary, error)
@@ -78,6 +79,12 @@ func (s *sessionFileSystem) Move(oldRemotePath, newRemotePath string) error {
 func (s *sessionFileSystem) Copy(srcRemotePath, destRemotePath string) error {
 	relUrl := "/auth/copy"
 	dto := &dtos.FsCopyDto{SrcRemotePath: srcRemotePath, DestRemotePath: destRemotePath}
+	return s.session.DoEncryptedJsonRequest(relUrl, dto, nil)
+}
+
+func (s *sessionFileSystem) Symlink(srcRemotePath, destRemoteSymlinkPath string) error {
+	relUrl := "/auth/symlink"
+	dto := &dtos.FsSymlinkDto{SrcRemotePath: srcRemotePath, DestRemoteSymlinkPath: destRemoteSymlinkPath}
 	return s.session.DoEncryptedJsonRequest(relUrl, dto, nil)
 }
 
