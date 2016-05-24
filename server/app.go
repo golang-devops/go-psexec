@@ -140,7 +140,7 @@ func (a *app) Run(logger service.Logger) {
 
 	e := echo.New()
 	if a.debugMode {
-		e.Debug()
+		e.SetDebug(true)
 	}
 
 	e.Use(middleware.Recover())
