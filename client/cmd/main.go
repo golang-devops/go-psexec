@@ -6,9 +6,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-devops/go-psexec/client"
 	"github.com/golang-devops/go-psexec/shared"
+)
+
+var (
+	version = "0.0.2"
 )
 
 var (
@@ -17,6 +22,7 @@ var (
 	serverFlag          = flag.String("server", "http://localhost:62677", "The endpoint server address")
 	executorFlag        = flag.String("executor", "winshell", "The executor to use")
 	clientPemFlag       = flag.String("client_pem", "client.pem", "The file path for the client pem (private+public) key file")
+	timeoutSeconds      = flag.Int64("timeout-seconds", 0, "The timeout to use when making calls")
 )
 
 func handleRecovery() {
@@ -35,7 +41,7 @@ func getExecutorExecRequestBuilder(session client.Session, executor string) clie
 	panic("Unsupported client executor: '" + executor + "'")
 }
 
-func execute(fireAndForget bool, onFeedback func(fb string), server, executor, clientPemPath, exe string, args ...string) error {
+func execute(fireAndForget bool, onFeedback func(fb string), server, executor, clientPemPath string, exe string, args ...string) error {
 	pvtKey, err := shared.ReadPemKey(clientPemPath)
 	if err != nil {
 		return fmt.Errorf("Cannot read client pem file, error: %s", err.Error())
@@ -95,6 +101,7 @@ outerFor:
 func main() {
 	defer handleRecovery()
 
+	fmt.Println("VERSION:", version)
 	flag.Parse()
 
 	if *interactiveModeFlag {
@@ -113,6 +120,14 @@ func main() {
 	exe = exeAndArgs[0]
 	if len(exeAndArgs) > 1 {
 		args = exeAndArgs[1:]
+	}
+
+	if *timeoutSeconds > 0 {
+		go func() {
+			time.Sleep(time.Duration(*timeoutSeconds) * time.Second)
+			fmt.Printf("Timeout of %d seconds reached, forcefully aborting the client process\n", *timeoutSeconds)
+			os.Exit(1)
+		}()
 	}
 
 	onFeedback := func(fb string) {
